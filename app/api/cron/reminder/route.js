@@ -74,12 +74,12 @@ export async function GET() {
       const emailReminders = []
       const waReminders = []
 
-      // Cek Tenggat Vaksin
+      // Cek Tenggat Vaksin (Mencakup Hari H, H-1, H-2, H-3)
       if (nextVaccine) {
         nextVaccine.setHours(0, 0, 0, 0)
         const diffDays = Math.ceil((nextVaccine - today) / (1000 * 60 * 60 * 24))
 
-        if ([0, 1, 3].includes(diffDays)) {
+        if (diffDays >= 0 && diffDays <= 3) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
           const dateStr = nextVaccine.toLocaleDateString('id-ID')
           
@@ -88,12 +88,12 @@ export async function GET() {
         }
       }
 
-      // Cek Tenggat Obat Cacing
+      // Cek Tenggat Obat Cacing (Mencakup Hari H, H-1, H-2, H-3)
       if (nextDeworming) {
         nextDeworming.setHours(0, 0, 0, 0)
         const diffDays = Math.ceil((nextDeworming - today) / (1000 * 60 * 60 * 24))
 
-        if ([0, 1, 3].includes(diffDays)) {
+        if (diffDays >= 0 && diffDays <= 3) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
           const dateStr = nextDeworming.toLocaleDateString('id-ID')
 
