@@ -56,11 +56,11 @@ export default function LoginPage() {
     <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">🐾 Pet Health Tracker</h1>
+          <h1 className="text-2xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
           <p className="text-xs text-slate-500 mt-1">
             {isRegister
-              ? 'Buat akun rekam medis anabul Anda'
-              : 'Masuk ke akun rekam medis anabul Anda'}
+              ? 'Buat akun Paspor Anabul Anda'
+              : 'Masuk ke akun Paspor Anabul Anda'}
           </p>
         </div>
 
