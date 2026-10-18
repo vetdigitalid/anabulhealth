@@ -51,13 +51,13 @@ export default function LoginPage() {
 
   // Fungsi Login / Register Menggunakan Google OAuth
   const handleGoogleLogin = async () => {
-    // Memastikan pengalihan selalu mengarah ke domain Vercel produksi
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://health.vercel.app'
+    // Memakai window.location.origin agar selalu mengarah secara otomatis ke https://anabulhealth.vercel.app/
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : 'https://anabulhealth.vercel.app/'
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${siteUrl}/`,
+        redirectTo: redirectUrl,
       },
     })
     if (error) {
