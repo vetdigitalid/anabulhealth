@@ -51,8 +51,10 @@ export default function LoginPage() {
 
   // Fungsi Login / Register Menggunakan Google OAuth
   const handleGoogleLogin = async () => {
-    // Memakai window.location.origin agar selalu mengarah secara otomatis ke https://anabulhealth.vercel.app/
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : 'https://anabulhealth.vercel.app/'
+    // Diarahkan ke route callback PKCE handler
+    const redirectUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/auth/callback` 
+      : 'https://anabulhealth.vercel.app/auth/callback'
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
