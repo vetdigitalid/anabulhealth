@@ -283,14 +283,14 @@ export default function Home() {
       {/* Header */}
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">🐾 Pet Health Tracker</h1>
+          <h1 className="text-xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
           <p className="text-xs text-slate-500">{user.email}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handlePrint}
             className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition-all"
-            title="Cetak Rekam Medis"
+            title="Cetak Paspor Anabul"
           >
             🖨️ Cetak
           </button>
@@ -477,7 +477,7 @@ export default function Home() {
       <div className="space-y-4">
         <div className="flex justify-between items-center print:hidden">
           <h2 className="text-lg font-bold text-slate-800">
-            📋 Rekam Medis Saya ({filteredPets.length})
+            📋 Paspor Anabul Saya ({filteredPets.length})
           </h2>
         </div>
 
