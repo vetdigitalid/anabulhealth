@@ -14,6 +14,5 @@ export async function GET(request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Setelah berhasil, arahkan kembali ke halaman utama / dashboard
   return NextResponse.redirect(`${origin}/`)
 }
