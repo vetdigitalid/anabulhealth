@@ -153,19 +153,19 @@ export async function GET(request) {
       // 1. Kirim 1 Email Terkonsolidasi per User
       if (item.emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
         await resend.emails.send({
-          from: 'Pet Health Tracker <onboarding@resend.dev>',
+          from: 'Paspor Anabul <onboarding@resend.dev>',
           to: targetEmail,
-          subject: `🐾 Pengingat Perawatan Anabul Anda`,
+          subject: `🐾 Pengingat Paspor Anabul Anda`,
           html: `
             <div style="font-family: sans-serif; padding: 20px; color: #333;">
-              <h2>🐾 Pengingat Perawatan Anabul</h2>
+              <h2>🐾 Pengingat Paspor Anabul</h2>
               <p>Halo! Berikut adalah jadwal perawatan medis terdekat untuk anabul kesayangan Anda:</p>
               <ul>
                 ${item.emailReminders.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
               </ul>
               <p>Jangan lupa untuk melakukan tindakan medis atau berkonsultasi dengan dokter hewan ya!</p>
               <br/>
-              <a href="https://anabulhealth.vercel.app" style="background: #2563eb; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 8px; font-weight: bold;">Buka Rekam Medis</a>
+              <a href="https://anabulhealth.vercel.app" style="background: #2563eb; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 8px; font-weight: bold;">Buka Paspor Anabul</a>
             </div>
           `
         })
@@ -174,9 +174,9 @@ export async function GET(request) {
 
       // 2. Kirim 1 WhatsApp Terkonsolidasi per User
       if (item.waReminders.length > 0 && item.phone && process.env.WA_API_TOKEN) {
-        const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk anabul Anda:\n\n` +
+        const waMessage = `🐾 *PENGINGAT PASPOR ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk anabul Anda:\n\n` +
           item.waReminders.join('\n') +
-          `\n\n_Buka rekam medis selengkapnya di: https://anabulhealth.vercel.app_`
+          `\n\n_Buka Paspor Anabul selengkapnya di: https://anabulhealth.vercel.app_`
 
         await sendWhatsApp(item.phone, waMessage)
         waSent++
