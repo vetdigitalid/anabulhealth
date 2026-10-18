@@ -57,8 +57,9 @@ export async function GET() {
     const { data: pets, error } = await supabase.from('pets').select('*')
     if (error) throw error
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Dapatkan tanggal hari ini dalam zona waktu WIB (Asia/Jakarta)
+    const nowInWib = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+    const today = new Date(nowInWib.getFullYear(), nowInWib.getMonth(), nowInWib.getDate())
 
     let emailsSent = 0
     let waSent = 0
@@ -68,49 +69,51 @@ export async function GET() {
       const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
       const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
 
-      // Dapatkan email pengguna (Aman jika admin role belum disetup)
+      // Dapatkan email pengguna dari Supabase Auth
       let targetEmail = null
       try {
         const { data: userData } = await supabase.auth.admin.getUserById(pet.user_id)
         targetEmail = userData?.user?.email
       } catch (e) {
-        console.log('Auth admin error:', e.message)
+        console.log('Auth admin info:', e.message)
       }
 
-      const targetPhone = pet.phone_number // Nomor WA yang disimpan di data anabul
+      const targetPhone = pet.phone_number
 
       const emailReminders = []
       const waReminders = []
 
-      // Cek Tenggat Vaksin (Mencakup Hari H, H-1, H-2, H-3)
+      // 1. Cek Tenggat Vaksin
       if (nextVaccine) {
-        nextVaccine.setHours(0, 0, 0, 0)
-        const diffDays = Math.ceil((nextVaccine - today) / (1000 * 60 * 60 * 24))
+        const targetDate = new Date(nextVaccine.getFullYear(), nextVaccine.getMonth(), nextVaccine.getDate())
+        const diffTime = targetDate - today
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
 
         if (diffDays >= 0 && diffDays <= 3) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
-          const dateStr = nextVaccine.toLocaleDateString('id-ID')
+          const dateStr = targetDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
           
           emailReminders.push(`💉 <b>Vaksinasi (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
           waReminders.push(`💉 *Vaksinasi ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
-      // Cek Tenggat Obat Cacing (Mencakup Hari H, H-1, H-2, H-3)
+      // 2. Cek Tenggat Obat Cacing
       if (nextDeworming) {
-        nextDeworming.setHours(0, 0, 0, 0)
-        const diffDays = Math.ceil((nextDeworming - today) / (1000 * 60 * 60 * 24))
+        const targetDate = new Date(nextDeworming.getFullYear(), nextDeworming.getMonth(), nextDeworming.getDate())
+        const diffTime = targetDate - today
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
 
         if (diffDays >= 0 && diffDays <= 3) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
-          const dateStr = nextDeworming.toLocaleDateString('id-ID')
+          const dateStr = targetDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
           emailReminders.push(`💊 <b>Obat Cacing (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
           waReminders.push(`💊 *Obat Cacing ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
-      // 1. Kirim Email (Jika ada pengingat & email valid)
+      // Kirim Email jika ada reminder
       if (emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
         await resend.emails.send({
           from: 'Pet Health Tracker <onboarding@resend.dev>',
@@ -132,7 +135,7 @@ export async function GET() {
         emailsSent++
       }
 
-      // 2. Kirim WhatsApp (Jika ada pengingat & nomor HP terisi)
+      // Kirim WhatsApp jika ada reminder
       if (waReminders.length > 0 && targetPhone && process.env.WA_API_TOKEN) {
         const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk *${pet.name}*:\n\n` +
           waReminders.join('\n') +
@@ -143,7 +146,6 @@ export async function GET() {
       }
     }
 
-    // Mengembalikan status debug agar terlihat jelas kunci mana yang belum disetup
     return NextResponse.json({ 
       success: true, 
       emailsSent, 
