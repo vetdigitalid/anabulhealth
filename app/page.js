@@ -33,17 +33,22 @@ export default function Home() {
         router.push('/login')
       } else {
         setUser(session.user)
-        fetchPets()
+        fetchPets(session.user.id)
       }
     }
     checkUser()
-  }, [])
+  }, [router])
 
-  const fetchPets = async () => {
+  // Ambil hanya data anabul milik user yang sedang login
+  const fetchPets = async (userId) => {
     setLoading(true)
+    const targetUserId = userId || user?.id
+    if (!targetUserId) return
+
     const { data, error } = await supabase
       .from('pets')
       .select('*')
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -75,7 +80,7 @@ export default function Home() {
       } else {
         alert('Data anabul berhasil diperbarui!')
         resetForm()
-        fetchPets()
+        fetchPets(user.id)
       }
     } else {
       const { error } = await supabase.from('pets').insert([
@@ -94,7 +99,7 @@ export default function Home() {
       } else {
         alert('Data anabul berhasil disimpan!')
         resetForm()
-        fetchPets()
+        fetchPets(user.id)
       }
     }
   }
@@ -118,7 +123,7 @@ export default function Home() {
         alert('Gagal menghapus data: ' + error.message)
       } else {
         alert('Data berhasil dihapus!')
-        fetchPets()
+        fetchPets(user.id)
       }
     }
   }
@@ -146,7 +151,11 @@ export default function Home() {
   )
 
   if (!user) {
-    return <div className="p-8 text-center text-slate-400 text-sm">Memeriksa sesi login...</div>
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <p className="text-slate-500 text-sm animate-pulse">Memeriksa sesi login...</p>
+      </div>
+    )
   }
 
   return (
