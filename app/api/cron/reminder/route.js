@@ -35,7 +35,7 @@ function calculateNextDate(dateString, isYoung, type) {
 async function sendWhatsApp(targetPhone, messageText) {
   if (!targetPhone || !process.env.WA_API_TOKEN) return
   try {
-    await fetch('https://api.fonnte.com/send', {
+    const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
       headers: {
         'Authorization': process.env.WA_API_TOKEN,
@@ -45,6 +45,8 @@ async function sendWhatsApp(targetPhone, messageText) {
         message: messageText,
       }),
     })
+    const data = await res.json()
+    console.log('Response Fonnte:', data)
   } catch (err) {
     console.error('Gagal kirim WhatsApp:', err.message)
   }
@@ -66,9 +68,15 @@ export async function GET() {
       const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
       const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
 
-      // Dapatkan email pengguna
-      const { data: userData } = await supabase.auth.admin.getUserById(pet.user_id).catch(() => ({ data: null }))
-      const targetEmail = userData?.user?.email
+      // Dapatkan email pengguna (Aman jika admin role belum disetup)
+      let targetEmail = null
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(pet.user_id)
+        targetEmail = userData?.user?.email
+      } catch (e) {
+        console.log('Auth admin error:', e.message)
+      }
+
       const targetPhone = pet.phone_number // Nomor WA yang disimpan di data anabul
 
       const emailReminders = []
@@ -103,7 +111,7 @@ export async function GET() {
       }
 
       // 1. Kirim Email (Jika ada pengingat & email valid)
-      if (emailReminders.length > 0 && targetEmail) {
+      if (emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
         await resend.emails.send({
           from: 'Pet Health Tracker <onboarding@resend.dev>',
           to: targetEmail,
@@ -125,7 +133,7 @@ export async function GET() {
       }
 
       // 2. Kirim WhatsApp (Jika ada pengingat & nomor HP terisi)
-      if (waReminders.length > 0 && targetPhone) {
+      if (waReminders.length > 0 && targetPhone && process.env.WA_API_TOKEN) {
         const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk *${pet.name}*:\n\n` +
           waReminders.join('\n') +
           `\n\n_Buka rekam medis selengkapnya di: https://anabulhealth.vercel.app_`
@@ -135,7 +143,14 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ success: true, emailsSent, waSent })
+    // Mengembalikan status debug agar terlihat jelas kunci mana yang belum disetup
+    return NextResponse.json({ 
+      success: true, 
+      emailsSent, 
+      waSent,
+      hasResendKey: Boolean(process.env.RESEND_API_KEY),
+      hasWaToken: Boolean(process.env.WA_API_TOKEN)
+    })
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
