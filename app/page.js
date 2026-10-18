@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
-
-// Inisialisasi Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Inisialisasi Supabase Client dengan aman di Client Side
+  const supabase = useMemo(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }, []);
 
   // State Form
   const [name, setName] = useState('');
@@ -23,6 +26,7 @@ export default function Home() {
 
   // Ambil Data Pets dari Supabase
   const fetchPets = async () => {
+    if (!supabase) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('pets')
@@ -46,6 +50,10 @@ export default function Home() {
   // Tambah Data Pet Baru
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!supabase) {
+      alert('Koneksi Supabase belum siap. Periksa Environment Variables.');
+      return;
+    }
     setSubmitting(true);
 
     const { error } = await supabase.from('pets').insert([
@@ -121,11 +129,19 @@ export default function Home() {
         ) : (
           // Dashboard Form & Data Anabul
           <div>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: '0 0 4px 0', color: '#1e293b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0, color: '#1e293b' }}>
                 ➕ Tambah Anabul
               </h2>
-              
+              <button 
+                onClick={() => setShowApp(false)}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Kembali
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '2rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '4px' }}>Nama Anabul:</label>
                 <input 
