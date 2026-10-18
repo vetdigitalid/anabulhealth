@@ -1,5 +1,5 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'headers'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
@@ -12,6 +12,6 @@ export async function GET(request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Setelah sesi berhasil disimpan, arahkan pengguna ke dashboard utama
+  // Arahkan kembali ke halaman utama (Dashboard) setelah sesi tersimpan
   return NextResponse.redirect(requestUrl.origin)
 }
