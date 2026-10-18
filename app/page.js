@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,10 +10,12 @@ const supabase = createClient(
 )
 
 export default function Home() {
+  const [user, setUser] = useState(null)
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [editingPet, setEditingPet] = useState(null) // Jika sedang mode edit
+  const [editingPet, setEditingPet] = useState(null)
+  const router = useRouter()
 
   const [form, setForm] = useState({
     name: '',
@@ -22,7 +25,20 @@ export default function Home() {
     medical_history: ''
   })
 
-  // Fetch Data Pet dari Supabase
+  // Cek Sesi User & Fetch Data
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+      } else {
+        setUser(session.user)
+        fetchPets()
+      }
+    }
+    checkUser()
+  }, [])
+
   const fetchPets = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -38,17 +54,11 @@ export default function Home() {
     setLoading(false)
   }
 
-  useEffect(() => {
-    fetchPets()
-  }, [])
-
-  // Simpan Data Baru atau Update Data
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
 
     if (editingPet) {
-      // Mode Edit (Update)
       const { error } = await supabase
         .from('pets')
         .update({
@@ -68,9 +78,9 @@ export default function Home() {
         fetchPets()
       }
     } else {
-      // Mode Tambah Baru (Insert)
       const { error } = await supabase.from('pets').insert([
         {
+          user_id: user.id, // Menautkan data ke user yang login
           name: form.name,
           species: form.species,
           breed: form.breed,
@@ -89,7 +99,6 @@ export default function Home() {
     }
   }
 
-  // Mulai Edit Data
   const handleEdit = (pet) => {
     setEditingPet(pet)
     setForm({
@@ -102,7 +111,6 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Hapus Data
   const handleDelete = async (id, name) => {
     if (confirm(`Apakah Anda yakin ingin menghapus data rekam medis ${name}?`)) {
       const { error } = await supabase.from('pets').delete().eq('id', id)
@@ -115,7 +123,11 @@ export default function Home() {
     }
   }
 
-  // Batal Edit
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   const resetForm = () => {
     setEditingPet(null)
     setForm({
@@ -127,23 +139,30 @@ export default function Home() {
     })
   }
 
-  // Filter Pencarian
   const filteredPets = pets.filter((pet) =>
     pet.name.toLowerCase().includes(search.toLowerCase()) ||
     (pet.breed && pet.breed.toLowerCase().includes(search.toLowerCase())) ||
     (pet.medical_history && pet.medical_history.toLowerCase().includes(search.toLowerCase()))
   )
 
+  if (!user) {
+    return <div className="p-8 text-center text-slate-400 text-sm">Memeriksa sesi login...</div>
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center justify-center gap-2">
-          🐾 Pet Health Tracker
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Rekam Medis Digital & Catatan Kesehatan Anabul
-        </p>
+      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">🐾 Pet Health Tracker</h1>
+          <p className="text-xs text-slate-500">{user.email}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="text-xs px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-medium transition-all"
+        >
+          Keluar
+        </button>
       </div>
 
       {/* Form Tambah / Edit Anabul */}
@@ -246,32 +265,26 @@ export default function Home() {
         </form>
       </div>
 
-      {/* Fitur Pencarian & Daftar Rekam Medis */}
+      {/* Daftar Rekam Medis */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            📋 Daftar Rekam Medis ({filteredPets.length})
-          </h2>
-        </div>
+        <h2 className="text-lg font-bold text-slate-800">
+          📋 Rekam Medis Saya ({filteredPets.length})
+        </h2>
 
-        {/* Input Pencarian */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="🔍 Cari berdasarkan nama, ras, atau rekam medis..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm"
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="🔍 Cari berdasarkan nama, ras, atau rekam medis..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm"
+        />
 
-        {/* List Data */}
         {loading ? (
-          <p className="text-center text-slate-400 py-8 text-sm">Memuat data rekam medis...</p>
+          <p className="text-center text-slate-400 py-8 text-sm">Memuat data...</p>
         ) : filteredPets.length === 0 ? (
           <div className="bg-white p-8 text-center rounded-2xl border border-slate-200">
             <p className="text-slate-400 text-sm">
-              {search ? 'Tidak ada data yang cocok dengan pencarian.' : 'Belum ada data anabul terdaftar.'}
+              {search ? 'Tidak ada data yang cocok.' : 'Belum ada data anabul terdaftar di akun Anda.'}
             </p>
           </div>
         ) : (
@@ -279,7 +292,7 @@ export default function Home() {
             {filteredPets.map((pet) => (
               <div
                 key={pet.id}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-start gap-3 hover:border-slate-300 transition-all"
+                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-start gap-3"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -300,18 +313,17 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Tombol Aksi: Edit & Hapus */}
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => handleEdit(pet)}
-                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
                     title="Edit Data"
                   >
                     ✏️
                   </button>
                   <button
                     onClick={() => handleDelete(pet.id, pet.name)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
                     title="Hapus Data"
                   >
                     🗑️
