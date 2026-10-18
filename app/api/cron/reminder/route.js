@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
+// Gunakan SERVICE_ROLE_KEY untuk akses admin ke Supabase Auth
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const supabase = createClient(
@@ -58,11 +59,10 @@ async function sendWhatsApp(targetPhone, messageText) {
 
 export async function GET(request) {
   try {
-    // 🛡️ SECURITY CHECK: Verifikasi token otentikasi dari Vercel Cron atau manual token
+    // 🛡️ SECURITY CHECK: Verifikasi CRON_SECRET
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
 
-    // Jika CRON_SECRET sudah di-set, pastikan header Authorization sesuai
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Akses ditolak' },
@@ -77,27 +77,16 @@ export async function GET(request) {
     const nowInWib = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
     const today = new Date(nowInWib.getFullYear(), nowInWib.getMonth(), nowInWib.getDate())
 
-    let emailsSent = 0
-    let waSent = 0
-    const logs = []
+    // Grouping pengingat berdasarkan user_id
+    const userReminders = {}
 
     for (const pet of pets) {
       const isYoung = pet.age && pet.age <= 6
       const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
       const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
 
-      let targetEmail = null
-      try {
-        const { data: userData } = await supabase.auth.admin.getUserById(pet.user_id)
-        targetEmail = userData?.user?.email
-      } catch (e) {
-        console.log('Auth error:', e.message)
-      }
-
-      const targetPhone = pet.phone_number
-
-      const emailReminders = []
-      const waReminders = []
+      const petEmailReminders = []
+      const petWaReminders = []
 
       // 1. Cek Vaksin
       if (nextVaccine) {
@@ -108,8 +97,8 @@ export async function GET(request) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
           const dateStr = targetDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
           
-          emailReminders.push(`💉 <b>Vaksinasi (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
-          waReminders.push(`💉 *Vaksinasi ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
+          petEmailReminders.push(`💉 <b>Vaksinasi (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
+          petWaReminders.push(`💉 *Vaksinasi ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
@@ -122,23 +111,57 @@ export async function GET(request) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
           const dateStr = targetDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
-          emailReminders.push(`💊 <b>Obat Cacing (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
-          waReminders.push(`💊 *Obat Cacing ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
+          petEmailReminders.push(`💊 <b>Obat Cacing (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
+          petWaReminders.push(`💊 *Obat Cacing ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
-      // Kirim Email
-      if (emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
+      // Gabungkan pengingat jika ada
+      if (petEmailReminders.length > 0 || petWaReminders.length > 0) {
+        if (!userReminders[pet.user_id]) {
+          userReminders[pet.user_id] = {
+            userId: pet.user_id,
+            phone: pet.phone_number,
+            emailReminders: [],
+            waReminders: []
+          }
+        }
+        userReminders[pet.user_id].emailReminders.push(...petEmailReminders)
+        userReminders[pet.user_id].waReminders.push(...petWaReminders)
+        if (!userReminders[pet.user_id].phone && pet.phone_number) {
+          userReminders[pet.user_id].phone = pet.phone_number
+        }
+      }
+    }
+
+    let emailsSent = 0
+    let waSent = 0
+
+    // Kirim notifikasi terkonsolidasi per user
+    for (const userId of Object.keys(userReminders)) {
+      const item = userReminders[userId]
+
+      // Ambil Email dari Supabase Auth
+      let targetEmail = null
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(userId)
+        targetEmail = userData?.user?.email
+      } catch (e) {
+        console.log('Auth fetch error:', e.message)
+      }
+
+      // 1. Kirim 1 Email Terkonsolidasi per User
+      if (item.emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
         await resend.emails.send({
           from: 'Pet Health Tracker <onboarding@resend.dev>',
           to: targetEmail,
-          subject: `🐾 Pengingat Kesehatan Anabul: ${pet.name}`,
+          subject: `🐾 Pengingat Perawatan Anabul Anda`,
           html: `
             <div style="font-family: sans-serif; padding: 20px; color: #333;">
               <h2>🐾 Pengingat Perawatan Anabul</h2>
-              <p>Halo! Berikut jadwal perawatan medis terdekat untuk <b>${pet.name}</b>:</p>
+              <p>Halo! Berikut adalah jadwal perawatan medis terdekat untuk anabul kesayangan Anda:</p>
               <ul>
-                ${emailReminders.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
+                ${item.emailReminders.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
               </ul>
               <p>Jangan lupa untuk melakukan tindakan medis atau berkonsultasi dengan dokter hewan ya!</p>
               <br/>
@@ -149,13 +172,13 @@ export async function GET(request) {
         emailsSent++
       }
 
-      // Kirim WA
-      if (waReminders.length > 0 && targetPhone && process.env.WA_API_TOKEN) {
-        const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk *${pet.name}*:\n\n` +
-          waReminders.join('\n') +
+      // 2. Kirim 1 WhatsApp Terkonsolidasi per User
+      if (item.waReminders.length > 0 && item.phone && process.env.WA_API_TOKEN) {
+        const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk anabul Anda:\n\n` +
+          item.waReminders.join('\n') +
           `\n\n_Buka rekam medis selengkapnya di: https://anabulhealth.vercel.app_`
-        
-        await sendWhatsApp(targetPhone, waMessage)
+
+        await sendWhatsApp(item.phone, waMessage)
         waSent++
       }
     }
