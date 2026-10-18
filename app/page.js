@@ -22,6 +22,7 @@ export default function Home() {
     species: 'Kucing',
     breed: '',
     age: '',
+    life_stage: 'Dewasa', // Opsi baru: Dewasa atau Anak (Kitten/Puppy)
     last_vaccine: '',
     deworming_date: '',
     medical_history: ''
@@ -75,6 +76,62 @@ export default function Home() {
     setLoading(false)
   }
 
+  // Fungsi Pembantu: Menghitung tanggal berikutnya berdasarkan life stage
+  const calculateNextDate = (dateString, isPuppyOrKitten = false, type = 'vaccine') => {
+    if (!dateString) return null
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return null
+
+    if (type === 'vaccine') {
+      if (isPuppyOrKitten) {
+        date.setMonth(date.getMonth() + 1) // +1 Bulan (4 minggu) untuk seri booster primer anak hewan
+      } else {
+        date.setFullYear(date.getFullYear() + 1) // +1 Tahun untuk booster tahunan dewasa
+      }
+    } else if (type === 'deworming') {
+      if (isPuppyOrKitten) {
+        date.setMonth(date.getMonth() + 1) // +1 Bulan untuk anak hewan
+      } else {
+        date.setMonth(date.getMonth() + 3) // +3 Bulan standar dewasa
+      }
+    }
+
+    return date
+  }
+
+  // Format tanggal ke tampilan lokal Indonesia
+  const formatDateLocale = (dateObj) => {
+    if (!dateObj) return ''
+    return dateObj.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  // Menghitung sisa hari / status tenggat
+  const getDueStatus = (nextDate) => {
+    if (!nextDate) return null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const target = new Date(nextDate)
+    target.setHours(0, 0, 0, 0)
+
+    const diffTime = target - today
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) {
+      return { label: `Jatuh tempo (${Math.abs(diffDays)} hr lalu)`, color: 'bg-rose-100 text-rose-700 border-rose-200' }
+    } else if (diffDays === 0) {
+      return { label: 'Jadwal Hari Ini!', color: 'bg-amber-100 text-amber-800 border-amber-300 font-bold animate-pulse' }
+    } else if (diffDays <= 14) {
+      return { label: `${diffDays} hari lagi`, color: 'bg-amber-50 text-amber-700 border-amber-200' }
+    } else {
+      return { label: `${diffDays} hari lagi`, color: 'bg-slate-100 text-slate-600 border-slate-200' }
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
@@ -123,6 +180,7 @@ export default function Home() {
       species: pet.species || 'Kucing',
       breed: pet.breed || '',
       age: pet.age || '',
+      life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
       deworming_date: pet.deworming_date || '',
       medical_history: pet.medical_history || ''
@@ -154,6 +212,7 @@ export default function Home() {
       species: 'Kucing',
       breed: '',
       age: '',
+      life_stage: 'Dewasa',
       last_vaccine: '',
       deworming_date: '',
       medical_history: ''
@@ -273,7 +332,14 @@ export default function Home() {
                 type="number"
                 placeholder="12"
                 value={form.age}
-                onChange={(e) => setForm({ ...form, age: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setForm({
+                    ...form,
+                    age: val,
+                    life_stage: val && parseInt(val) <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa'
+                  })
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
               />
             </div>
@@ -301,6 +367,20 @@ export default function Home() {
                 className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+              Status Program Vaksin:
+            </label>
+            <select
+              value={form.life_stage}
+              onChange={(e) => setForm({ ...form, life_stage: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white"
+            >
+              <option value="Dewasa">Dewasa (Booster Tahunan / 1 Tahun Sekali)</option>
+              <option value="Anak (Kitten/Puppy)">Anak / Kitten / Puppy (Seri Vaksin Primer / 1 Bulan Sekali)</option>
+            </select>
           </div>
 
           <div>
@@ -354,31 +434,40 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredPets.map((pet) => (
-              <div
-                key={pet.id}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-start gap-3"
-              >
-                <div className="space-y-2 w-full">
+          <div className="space-y-4">
+            {filteredPets.map((pet) => {
+              // Jika umur <= 6 bulan, asumsikan anak hewan (bisa disesuaikan dari input umur)
+              const isYoung = pet.age && pet.age <= 6
+              
+              const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine') 
+              const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming') 
+              
+              const vaccineStatus = getDueStatus(nextVaccine)
+              const dewormingStatus = getDueStatus(nextDeworming)
+
+              return (
+                <div
+                  key={pet.id}
+                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-slate-800 text-base">{pet.name}</h3>
-                      <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
+                      <h3 className="font-bold text-slate-800 text-lg">{pet.name}</h3>
+                      <span className="text-xs px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
                         {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 print:hidden">
                       <button
                         onClick={() => handleEdit(pet)}
-                        className="p-1 text-slate-400 hover:text-amber-600 rounded"
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                         title="Edit Data"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleDelete(pet.id, pet.name)}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                         title="Hapus Data"
                       >
                         🗑️
@@ -386,29 +475,78 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
                     {pet.age && <p><b>Umur:</b> {pet.age} Bulan</p>}
-                    {pet.last_vaccine && (
-                      <p className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                        <b>Vaksin:</b> {pet.last_vaccine}
-                      </p>
+                    <span className="text-slate-300">|</span>
+                    <p className="text-blue-600 font-medium">
+                      Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
+                    </p>
+                  </div>
+
+                  {/* Kotak Pengingat & Jadwal Vaksin / Obat Cacing */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+                    {/* Vaksin Section */}
+                    {pet.last_vaccine ? (
+                      <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
+                        <div>
+                          <p className="text-emerald-800 font-semibold mb-1">
+                            💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
+                          </p>
+                          <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
+                          <p className="text-emerald-700 font-bold mt-0.5">
+                            Jatuh Tempo: {formatDateLocale(nextVaccine)}
+                          </p>
+                        </div>
+                        {vaccineStatus && (
+                          <div className="mt-2">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
+                              {vaccineStatus.label}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                        💉 Belum ada riwayat vaksin
+                      </div>
                     )}
-                    {pet.deworming_date && (
-                      <p className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                        <b>Obat Cacing:</b> {pet.deworming_date}
-                      </p>
+
+                    {/* Obat Cacing Section */}
+                    {pet.deworming_date ? (
+                      <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
+                        <div>
+                          <p className="text-indigo-800 font-semibold mb-1">
+                            💊 Obat Cacing {isYoung ? '(+1 Bln)' : '(+3 Bln)'}
+                          </p>
+                          <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
+                          <p className="text-indigo-700 font-bold mt-0.5">
+                            Jatuh Tempo: {formatDateLocale(nextDeworming)}
+                          </p>
+                        </div>
+                        {dewormingStatus && (
+                          <div className="mt-2">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
+                              {dewormingStatus.label}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                        💊 Belum ada riwayat obat cacing
+                      </div>
                     )}
                   </div>
 
                   {pet.medical_history && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1">
-                      <span className="font-semibold text-slate-700 block mb-0.5">Catatan Medis:</span>
+                    <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
+                      <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
                       {pet.medical_history}
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
