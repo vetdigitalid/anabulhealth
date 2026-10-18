@@ -23,7 +23,7 @@ export default function LoginPage() {
     setMessage('')
 
     if (isRegister) {
-      // Registrasi Akun Baru
+      // Registrasi Akun Baru via Email
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -34,7 +34,7 @@ export default function LoginPage() {
         setMessage('Pendaftaran berhasil! Silakan langsung coba login.')
       }
     } else {
-      // Login Akun
+      // Login Akun via Email
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -49,7 +49,7 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  // Fungsi Login / Register Menggunakan Google OAuth
+  // Fungsi Login Menggunakan Google OAuth (Langsung Mengarah ke Dashboard Utama)
   const handleGoogleLogin = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://anabulhealth.vercel.app'
 
