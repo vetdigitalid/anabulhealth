@@ -9,7 +9,7 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Fungsi pembantu menghitung tanggal jatuh tempo
+// Helper hitung tanggal jatuh tempo
 function calculateNextDate(dateString, isYoung, type) {
   if (!dateString) return null
   const date = new Date(dateString)
@@ -31,9 +31,27 @@ function calculateNextDate(dateString, isYoung, type) {
   return date
 }
 
+// Helper kirim pesan WhatsApp via Fonnte
+async function sendWhatsApp(targetPhone, messageText) {
+  if (!targetPhone || !process.env.WA_API_TOKEN) return
+  try {
+    await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': process.env.WA_API_TOKEN,
+      },
+      body: new URLSearchParams({
+        target: targetPhone,
+        message: messageText,
+      }),
+    })
+  } catch (err) {
+    console.error('Gagal kirim WhatsApp:', err.message)
+  }
+}
+
 export async function GET() {
   try {
-    // 1. Ambil semua data pets beserta user ID
     const { data: pets, error } = await supabase.from('pets').select('*')
     if (error) throw error
 
@@ -41,19 +59,20 @@ export async function GET() {
     today.setHours(0, 0, 0, 0)
 
     let emailsSent = 0
+    let waSent = 0
 
     for (const pet of pets) {
       const isYoung = pet.age && pet.age <= 6
       const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
       const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
 
-      // Dapatkan email pemilik dari auth.users via Supabase RPC atau query
+      // Dapatkan email pengguna
       const { data: userData } = await supabase.auth.admin.getUserById(pet.user_id).catch(() => ({ data: null }))
       const targetEmail = userData?.user?.email
+      const targetPhone = pet.phone_number // Nomor WA yang disimpan di data anabul
 
-      if (!targetEmail) continue
-
-      const reminders = []
+      const emailReminders = []
+      const waReminders = []
 
       // Cek Tenggat Vaksin
       if (nextVaccine) {
@@ -62,7 +81,10 @@ export async function GET() {
 
         if ([0, 1, 3].includes(diffDays)) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
-          reminders.push(`💉 <b>Vaksinasi (${pet.name})</b>: Jatuh tempo ${statusTxt} (${nextVaccine.toLocaleDateString('id-ID')})`)
+          const dateStr = nextVaccine.toLocaleDateString('id-ID')
+          
+          emailReminders.push(`💉 <b>Vaksinasi (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
+          waReminders.push(`💉 *Vaksinasi ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
@@ -73,12 +95,15 @@ export async function GET() {
 
         if ([0, 1, 3].includes(diffDays)) {
           const statusTxt = diffDays === 0 ? 'HARI INI' : `${diffDays} hari lagi`
-          reminders.push(`💊 <b>Obat Cacing (${pet.name})</b>: Jatuh tempo ${statusTxt} (${nextDeworming.toLocaleDateString('id-ID')})`)
+          const dateStr = nextDeworming.toLocaleDateString('id-ID')
+
+          emailReminders.push(`💊 <b>Obat Cacing (${pet.name})</b>: Jatuh tempo ${statusTxt} (${dateStr})`)
+          waReminders.push(`💊 *Obat Cacing ${pet.name}*: Jatuh tempo ${statusTxt} (${dateStr})`)
         }
       }
 
-      // Kirim Email jika ada pengingat yang cocok
-      if (reminders.length > 0) {
+      // 1. Kirim Email (Jika ada pengingat & email valid)
+      if (emailReminders.length > 0 && targetEmail) {
         await resend.emails.send({
           from: 'Pet Health Tracker <onboarding@resend.dev>',
           to: targetEmail,
@@ -86,9 +111,9 @@ export async function GET() {
           html: `
             <div style="font-family: sans-serif; padding: 20px; color: #333;">
               <h2>🐾 Pengingat Perawatan Anabul</h2>
-              <p>Halo! Berikut adalah jadwal perawatan medis terdekat untuk <b>${pet.name}</b>:</p>
+              <p>Halo! Berikut jadwal perawatan medis terdekat untuk <b>${pet.name}</b>:</p>
               <ul>
-                ${reminders.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
+                ${emailReminders.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
               </ul>
               <p>Jangan lupa untuk melakukan tindakan medis atau berkonsultasi dengan dokter hewan ya!</p>
               <br/>
@@ -98,9 +123,19 @@ export async function GET() {
         })
         emailsSent++
       }
+
+      // 2. Kirim WhatsApp (Jika ada pengingat & nomor HP terisi)
+      if (waReminders.length > 0 && targetPhone) {
+        const waMessage = `🐾 *PENGINGAT KESEHATAN ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk *${pet.name}*:\n\n` +
+          waReminders.join('\n') +
+          `\n\n_Buka rekam medis selengkapnya di: https://anabulhealth.vercel.app_`
+        
+        await sendWhatsApp(targetPhone, waMessage)
+        waSent++
+      }
     }
 
-    return NextResponse.json({ success: true, emailsSent })
+    return NextResponse.json({ success: true, emailsSent, waSent })
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
