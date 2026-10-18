@@ -27,25 +27,26 @@ export default function Home() {
     medical_history: ''
   })
 
-  // Cek Sesi User & Fetch Data secara Real-time
+  // Cek Sesi User saat Halaman Di-load
   useEffect(() => {
-    // 1. Cek sesi awal
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+      } else {
+        setUser(session.user)
+        fetchPets(session.user.id)
+      }
+      setLoading(false)
+    }
+
+    checkSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser(session.user)
         fetchPets(session.user.id)
       } else {
-        router.push('/login')
-      }
-      setLoading(false)
-    })
-
-    // 2. Dengarkan perubahan sesi (penting untuk Google OAuth redirect)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setUser(session.user)
-        fetchPets(session.user.id)
-      } else if (event === 'SIGNED_OUT') {
         setUser(null)
         router.push('/login')
       }
