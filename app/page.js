@@ -22,7 +22,8 @@ export default function Home() {
     species: 'Kucing',
     breed: '',
     age: '',
-    life_stage: 'Dewasa', // Opsi baru: Dewasa atau Anak (Kitten/Puppy)
+    phone_number: '6281215667746', // Default nomor WhatsApp Fonnte Anda
+    life_stage: 'Dewasa',
     last_vaccine: '',
     deworming_date: '',
     medical_history: ''
@@ -84,15 +85,15 @@ export default function Home() {
 
     if (type === 'vaccine') {
       if (isPuppyOrKitten) {
-        date.setMonth(date.getMonth() + 1) // +1 Bulan (4 minggu) untuk seri booster primer anak hewan
+        date.setMonth(date.getMonth() + 1)
       } else {
-        date.setFullYear(date.getFullYear() + 1) // +1 Tahun untuk booster tahunan dewasa
+        date.setFullYear(date.getFullYear() + 1)
       }
     } else if (type === 'deworming') {
       if (isPuppyOrKitten) {
-        date.setMonth(date.getMonth() + 1) // +1 Bulan untuk anak hewan
+        date.setMonth(date.getMonth() + 1)
       } else {
-        date.setMonth(date.getMonth() + 3) // +3 Bulan standar dewasa
+        date.setMonth(date.getMonth() + 3)
       }
     }
 
@@ -142,6 +143,7 @@ export default function Home() {
       species: form.species,
       breed: form.breed,
       age: form.age ? parseInt(form.age) : null,
+      phone_number: form.phone_number || null,
       medical_history: form.medical_history,
       last_vaccine: form.last_vaccine || null,
       deworming_date: form.deworming_date || null
@@ -180,6 +182,7 @@ export default function Home() {
       species: pet.species || 'Kucing',
       breed: pet.breed || '',
       age: pet.age || '',
+      phone_number: pet.phone_number || '6281215667746',
       life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
       deworming_date: pet.deworming_date || '',
@@ -212,6 +215,7 @@ export default function Home() {
       species: 'Kucing',
       breed: '',
       age: '',
+      phone_number: '6281215667746',
       life_stage: 'Dewasa',
       last_vaccine: '',
       deworming_date: '',
@@ -371,6 +375,20 @@ export default function Home() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
+              Nomor WhatsApp Penerima (Fonnte):
+            </label>
+            <input
+              type="text"
+              placeholder="6281215667746"
+              value={form.phone_number}
+              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+            />
+            <p className="text-[10px] text-slate-400 mt-0.5">Gunakan format awalan 62 tanpa tanda + (contoh: 6281215667746)</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
               Status Program Vaksin:
             </label>
             <select
@@ -436,9 +454,7 @@ export default function Home() {
         ) : (
           <div className="space-y-4">
             {filteredPets.map((pet) => {
-              // Jika umur <= 6 bulan, asumsikan anak hewan (bisa disesuaikan dari input umur)
               const isYoung = pet.age && pet.age <= 6
-              
               const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine') 
               const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming') 
               
@@ -481,6 +497,12 @@ export default function Home() {
                     <p className="text-blue-600 font-medium">
                       Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
                     </p>
+                    {pet.phone_number && (
+                      <>
+                        <span className="text-slate-300">|</span>
+                        <p className="text-slate-600">📱 WA: {pet.phone_number}</p>
+                      </>
+                    )}
                   </div>
 
                   {/* Kotak Pengingat & Jadwal Vaksin / Obat Cacing */}
