@@ -143,6 +143,30 @@ export default function Home() {
     }
   }
 
+  // Handler untuk memperbarui tindakan medis (Mark as Done)
+  const handleMarkDone = async (petId, type) => {
+    const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
+    if (!confirm(`Tandai ${typeText} sudah diberikan hari ini?`)) return
+
+    try {
+      const res = await fetch('/api/pets/mark-done', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ petId, type }),
+      })
+
+      const result = await res.json()
+      if (result.success) {
+        alert(`Berhasil memperbarui tanggal ${typeText}!`)
+        fetchPets(user.id) // Refresh data anabul dari Supabase
+      } else {
+        alert(`Gagal: ${result.error}`)
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan jaringan')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
@@ -403,7 +427,7 @@ export default function Home() {
               <input
                 type="date"
                 value={form.deworming_date}
-                onChange={(e) => setForm({ ...form, dewomring_date: e.target.value })}
+                onChange={(e) => setForm({ ...form, deworming_date: e.target.value })}
                 className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs"
               />
             </div>
@@ -580,6 +604,22 @@ export default function Home() {
                         💊 Belum ada riwayat obat cacing
                       </div>
                     )}
+                  </div>
+
+                  {/* Tombol Aksi Cepat: Mark as Done */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
+                    <button
+                      onClick={() => handleMarkDone(pet.id, 'vaccine')}
+                      className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                    >
+                      ✅ Sudah Vaksin Hari Ini
+                    </button>
+                    <button
+                      onClick={() => handleMarkDone(pet.id, 'deworming')}
+                      className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                    >
+                      ✅ Sudah Obat Cacing Hari Ini
+                    </button>
                   </div>
 
                   {pet.medical_history && (
