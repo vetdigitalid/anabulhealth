@@ -22,7 +22,7 @@ export default function Home() {
     species: 'Kucing',
     breed: '',
     age: '',
-    phone_number: '6281215667746', // Default nomor WhatsApp Fonnte Anda
+    phone_number: '',
     life_stage: 'Dewasa',
     last_vaccine: '',
     deworming_date: '',
@@ -75,6 +75,16 @@ export default function Home() {
       setPets(data || [])
     }
     setLoading(false)
+  }
+
+  // Helper konversi format nomor WhatsApp ke 62xxx
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return ''
+    let cleaned = phone.replace(/[^0-9]/g, '')
+    if (cleaned.startsWith('0')) {
+      cleaned = '62' + cleaned.slice(1)
+    }
+    return cleaned
   }
 
   // Fungsi Pembantu: Menghitung tanggal berikutnya berdasarkan life stage
@@ -136,6 +146,9 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
+    if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
+
+    const formattedPhone = formatPhoneNumber(form.phone_number)
 
     const payload = {
       user_id: user.id,
@@ -143,7 +156,7 @@ export default function Home() {
       species: form.species,
       breed: form.breed,
       age: form.age ? parseInt(form.age) : null,
-      phone_number: form.phone_number || null,
+      phone_number: formattedPhone,
       medical_history: form.medical_history,
       last_vaccine: form.last_vaccine || null,
       deworming_date: form.deworming_date || null
@@ -182,7 +195,7 @@ export default function Home() {
       species: pet.species || 'Kucing',
       breed: pet.breed || '',
       age: pet.age || '',
-      phone_number: pet.phone_number || '6281215667746',
+      phone_number: pet.phone_number || '',
       life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
       deworming_date: pet.deworming_date || '',
@@ -215,7 +228,7 @@ export default function Home() {
       species: 'Kucing',
       breed: '',
       age: '',
-      phone_number: '6281215667746',
+      phone_number: '',
       life_stage: 'Dewasa',
       last_vaccine: '',
       deworming_date: '',
@@ -244,7 +257,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
           <h1 className="text-xl font-bold text-slate-800">🐾 Pet Health Tracker</h1>
           <p className="text-xs text-slate-500">{user.email}</p>
@@ -266,6 +279,14 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Banner Himbauan Pengingat WA */}
+      <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2 print:hidden">
+        <span className="text-base">📲</span>
+        <p>
+          <b>Notifikasi Pengingat Ganda:</b> Masukkan nomor WhatsApp yang aktif agar Anda menerima jadwal vaksinasi & obat cacing via <b>Email</b> dan <b>WhatsApp</b>!
+        </p>
+      </div>
+
       {/* Form Tambah / Edit Anabul */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 print:hidden">
         <h2 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
@@ -283,7 +304,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Nama Anabul:
+              Nama Anabul <span className="text-rose-500">*</span>:
             </label>
             <input
               type="text"
@@ -327,6 +348,21 @@ export default function Home() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+              Nomor WhatsApp Penerima Notifikasi <span className="text-rose-500">*</span>:
+            </label>
+            <input
+              type="text"
+              placeholder="081215667746 atau 6281215667746"
+              value={form.phone_number}
+              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              required
+            />
+            <p className="text-[10px] text-slate-400 mt-0.5">Wajib diisi agar notifikasi WhatsApp pengingat otomatis terkirim</p>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -367,24 +403,10 @@ export default function Home() {
               <input
                 type="date"
                 value={form.deworming_date}
-                onChange={(e) => setForm({ ...form, deworming_date: e.target.value })}
+                onChange={(e) => setForm({ ...form, dewomring_date: e.target.value })}
                 className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Nomor WhatsApp Penerima (Fonnte):
-            </label>
-            <input
-              type="text"
-              placeholder="6281215667746"
-              value={form.phone_number}
-              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
-            />
-            <p className="text-[10px] text-slate-400 mt-0.5">Gunakan format awalan 62 tanpa tanda + (contoh: 6281215667746)</p>
           </div>
 
           <div>
