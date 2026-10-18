@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Pet Health Tracker - Rekam Medis Anabul',
-  description: 'Aplikasi pencatatan rekam medis dan kesehatan hewan peliharaan',
+  title: 'Paspor Anabul - Rekam Medis & Pengingat Kesehatan Hewan',
+  description: 'Aplikasi pencatatan rekam medis, jadwal vaksinasi, obat cacing, dan pengingat otomatis untuk anabul kesayangan.',
 }
 
 export default function RootLayout({ children }) {
