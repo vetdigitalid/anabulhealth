@@ -172,6 +172,12 @@ export default function Home() {
     if (!form.name) return alert('Nama Anabul wajib diisi!')
     if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
 
+    // Validasi Freemium: Cek apakah user sudah punya 1 anabul dan tidak sedang edit
+    if (!editingPet && pets.length >= 1) {
+      alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftarkan 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
+      return
+    }
+
     const formattedPhone = formatPhoneNumber(form.phone_number)
 
     const payload = {
@@ -325,6 +331,12 @@ export default function Home() {
           )}
         </h2>
 
+        {pets.length >= 1 && !editingPet && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+            ⚠️ Kuota akun gratis Anda sudah terpakai (1/1 Anabul). Hapus data anabul yang ada atau upgrade ke VIP untuk menambah anabul baru.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -465,10 +477,13 @@ export default function Home() {
             className={`w-full py-2.5 rounded-xl font-medium text-white transition-all shadow-sm ${
               editingPet
                 ? 'bg-amber-600 hover:bg-amber-700'
+                : pets.length >= 1
+                ? 'bg-slate-300 cursor-not-allowed text-slate-500'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
+            disabled={!editingPet && pets.length >= 1}
           >
-            {editingPet ? 'Update Data Anabul' : 'Simpan Data Anabul'}
+            {editingPet ? 'Update Data Anabul' : pets.length >= 1 ? 'Batas Kuota Gratis (1/1 Anabul)' : 'Simpan Data Anabul'}
           </button>
         </form>
       </div>
@@ -477,7 +492,7 @@ export default function Home() {
       <div className="space-y-4">
         <div className="flex justify-between items-center print:hidden">
           <h2 className="text-lg font-bold text-slate-800">
-            📋 Paspor Anabul Saya ({filteredPets.length})
+            📋 Paspor Anabul Saya ({filteredPets.length}/1 Kuota Gratis)
           </h2>
         </div>
 
