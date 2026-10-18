@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
@@ -8,28 +7,13 @@ export async function GET(request) {
   const origin = requestUrl.origin
 
   if (code) {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value
-          },
-          set(name, value, options) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name, options) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
-    
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Setelah sesi berhasil diproses, arahkan ke dashboard utama
+  // Setelah berhasil, arahkan kembali ke halaman utama / dashboard
   return NextResponse.redirect(`${origin}/`)
 }
