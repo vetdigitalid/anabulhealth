@@ -22,6 +22,8 @@ export default function Home() {
     species: 'Kucing',
     breed: '',
     age: '',
+    last_vaccine: '',
+    deworming_date: '',
     medical_history: ''
   })
 
@@ -39,7 +41,7 @@ export default function Home() {
     checkUser()
   }, [router])
 
-  // Ambil hanya data anabul milik user yang sedang login
+  // Ambil data anabul milik user
   const fetchPets = async (userId) => {
     setLoading(true)
     const targetUserId = userId || user?.id
@@ -63,16 +65,21 @@ export default function Home() {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
 
+    const payload = {
+      user_id: user.id,
+      name: form.name,
+      species: form.species,
+      breed: form.breed,
+      age: form.age ? parseInt(form.age) : null,
+      medical_history: form.medical_history,
+      last_vaccine: form.last_vaccine || null,
+      deworming_date: form.deworming_date || null
+    }
+
     if (editingPet) {
       const { error } = await supabase
         .from('pets')
-        .update({
-          name: form.name,
-          species: form.species,
-          breed: form.breed,
-          age: form.age ? parseInt(form.age) : null,
-          medical_history: form.medical_history
-        })
+        .update(payload)
         .eq('id', editingPet.id)
 
       if (error) {
@@ -83,16 +90,7 @@ export default function Home() {
         fetchPets(user.id)
       }
     } else {
-      const { error } = await supabase.from('pets').insert([
-        {
-          user_id: user.id, // Menautkan data ke user yang login
-          name: form.name,
-          species: form.species,
-          breed: form.breed,
-          age: form.age ? parseInt(form.age) : null,
-          medical_history: form.medical_history
-        }
-      ])
+      const { error } = await supabase.from('pets').insert([payload])
 
       if (error) {
         alert('Gagal menyimpan data: ' + error.message)
@@ -111,6 +109,8 @@ export default function Home() {
       species: pet.species || 'Kucing',
       breed: pet.breed || '',
       age: pet.age || '',
+      last_vaccine: pet.last_vaccine || '',
+      deworming_date: pet.deworming_date || '',
       medical_history: pet.medical_history || ''
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -140,8 +140,14 @@ export default function Home() {
       species: 'Kucing',
       breed: '',
       age: '',
+      last_vaccine: '',
+      deworming_date: '',
       medical_history: ''
     })
+  }
+
+  const handlePrint = () => {
+    window.print()
   }
 
   const filteredPets = pets.filter((pet) =>
@@ -161,188 +167,28 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
           <h1 className="text-xl font-bold text-slate-800">🐾 Pet Health Tracker</h1>
           <p className="text-xs text-slate-500">{user.email}</p>
         </div>
-        <button
-          onClick={handleLogout}
-          className="text-xs px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-medium transition-all"
-        >
-          Keluar
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrint}
+            className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition-all"
+            title="Cetak Rekam Medis"
+          >
+            🖨️ Cetak
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-xs px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-medium transition-all"
+          >
+            Keluar
+          </button>
+        </div>
       </div>
 
       {/* Form Tambah / Edit Anabul */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
-          <span>{editingPet ? '✏️ Edit Data Anabul' : '➕ Tambah Anabul'}</span>
-          {editingPet && (
-            <button
-              onClick={resetForm}
-              className="text-xs text-rose-500 hover:underline"
-            >
-              Batal Edit
-            </button>
-          )}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Nama Anabul:
-            </label>
-            <input
-              type="text"
-              placeholder="Contoh: Milo"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Jenis:
-              </label>
-              <select
-                value={form.species}
-                onChange={(e) => setForm({ ...form, species: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white"
-              >
-                <option value="Kucing">Kucing</option>
-                <option value="Anjing">Anjing</option>
-                <option value="Kelinci">Kelinci</option>
-                <option value="Burung">Burung</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Ras/Breed:
-              </label>
-              <input
-                type="text"
-                placeholder="Persia / Domestic"
-                value={form.breed}
-                onChange={(e) => setForm({ ...form, breed: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Umur (Bulan):
-            </label>
-            <input
-              type="number"
-              placeholder="12"
-              value={form.age}
-              onChange={(e) => setForm({ ...form, age: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Catatan Medis:
-            </label>
-            <textarea
-              rows="3"
-              placeholder="Riwayat vaksin, alergi, atau penyakit..."
-              value={form.medical_history}
-              onChange={(e) => setForm({ ...form, medical_history: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            className={`w-full py-2.5 rounded-xl font-medium text-white transition-all shadow-sm ${
-              editingPet
-                ? 'bg-amber-600 hover:bg-amber-700'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {editingPet ? 'Update Data Anabul' : 'Simpan Data Anabul'}
-          </button>
-        </form>
-      </div>
-
-      {/* Daftar Rekam Medis */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-800">
-          📋 Rekam Medis Saya ({filteredPets.length})
-        </h2>
-
-        <input
-          type="text"
-          placeholder="🔍 Cari berdasarkan nama, ras, atau rekam medis..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm"
-        />
-
-        {loading ? (
-          <p className="text-center text-slate-400 py-8 text-sm">Memuat data...</p>
-        ) : filteredPets.length === 0 ? (
-          <div className="bg-white p-8 text-center rounded-2xl border border-slate-200">
-            <p className="text-slate-400 text-sm">
-              {search ? 'Tidak ada data yang cocok.' : 'Belum ada data anabul terdaftar di akun Anda.'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredPets.map((pet) => (
-              <div
-                key={pet.id}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-start gap-3"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 text-base">{pet.name}</h3>
-                    <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
-                      {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
-                    </span>
-                  </div>
-                  {pet.age && (
-                    <p className="text-xs text-slate-500">
-                      <span className="font-medium">Umur:</span> {pet.age} Bulan
-                    </p>
-                  )}
-                  {pet.medical_history && (
-                    <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg mt-2 border border-slate-100">
-                      <span className="font-semibold text-slate-700">Catatan:</span> {pet.medical_history}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEdit(pet)}
-                    className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                    title="Edit Data"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => handleDelete(pet.id, pet.name)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                    title="Hapus Data"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 print:hidden">
+        <h2 className="text-lg font-semibold
