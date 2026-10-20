@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['tailwindcss'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      config.resolve = config.resolve || {};
       config.resolve.fallback = {
+        ...config.resolve.fallback,
         fs: false,
         v8: false,
         net: false,
@@ -16,9 +19,6 @@ const nextConfig = {
         os: false,
         crypto: false,
         stream: false,
-        http: false,
-        https: false,
-        zlib: false,
       };
     }
     return config;
