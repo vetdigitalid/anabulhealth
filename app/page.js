@@ -15,6 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [editingPet, setEditingPet] = useState(null)
+  const [isVip, setIsVip] = useState(false)
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -29,7 +30,7 @@ export default function Home() {
     medical_history: ''
   })
 
-  // Cek Sesi User saat Halaman Di-load
+  // Cek Sesi User & Status VIP saat Halaman Di-load
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -37,6 +38,7 @@ export default function Home() {
         router.push('/login')
       } else {
         setUser(session.user)
+        fetchUserData(session.user.id)
         fetchPets(session.user.id)
       }
       setLoading(false)
@@ -47,6 +49,7 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser(session.user)
+        fetchUserData(session.user.id)
         fetchPets(session.user.id)
       } else {
         setUser(null)
@@ -56,6 +59,19 @@ export default function Home() {
 
     return () => subscription.unsubscribe()
   }, [router])
+
+  // Ambil data profil user untuk cek status is_vip
+  const fetchUserData = async (userId) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_vip')
+      .eq('id', userId)
+      .single()
+
+    if (data) {
+      setIsVip(data.is_vip || false)
+    }
+  }
 
   // Ambil data anabul milik user
   const fetchPets = async (userId) => {
@@ -158,7 +174,7 @@ export default function Home() {
       const result = await res.json()
       if (result.success) {
         alert(`Berhasil memperbarui tanggal ${typeText}!`)
-        fetchPets(user.id) // Refresh data anabul dari Supabase
+        fetchPets(user.id)
       } else {
         alert(`Gagal: ${result.error}`)
       }
@@ -167,13 +183,52 @@ export default function Home() {
     }
   }
 
+  // Handler untuk memicu Checkout Midtrans QRIS
+  const handleUpgradeVip = async () => {
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          amount: 29000 // Harga Paket VIP (Rp 29.000)
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat sesi pembayaran');
+
+      const { token, redirect_url } = data;
+
+      if (window.snap) {
+        window.snap.pay(token, {
+          onSuccess: function(result) {
+            alert("Pembayaran Berhasil! Akun Anda telah menjadi VIP.");
+            window.location.reload();
+          },
+          onPending: function(result) {
+            alert("Menunggu pembayaran QRIS selesai...");
+          },
+          onError: function(result) {
+            alert("Pembayaran gagal!");
+          }
+        });
+      } else {
+        window.location.href = redirect_url;
+      }
+    } catch (error) {
+      alert("Gagal memproses upgrade VIP: " + error.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name) return alert('Nama Anabul wajib diisi!')
     if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
 
-    // Validasi Freemium: Cek apakah user sudah punya 1 anabul dan tidak sedang edit
-    if (!editingPet && pets.length >= 1) {
+    // Validasi Freemium: Jika bukan VIP dan anabul sudah >= 1
+    if (!isVip && !editingPet && pets.length >= 1) {
       alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftarkan 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
       return
     }
@@ -289,10 +344,25 @@ export default function Home() {
       {/* Header */}
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
+            {isVip && (
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-200">
+                👑 VIP MEMBER
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500">{user.email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {!isVip && (
+            <button
+              onClick={handleUpgradeVip}
+              className="text-xs px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 font-bold shadow-sm transition-all animate-bounce"
+            >
+              👑 Upgrade VIP
+            </button>
+          )}
           <button
             onClick={handlePrint}
             className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition-all"
@@ -331,9 +401,15 @@ export default function Home() {
           )}
         </h2>
 
-        {pets.length >= 1 && !editingPet && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-            ⚠️ Kuota akun gratis Anda sudah terpakai (1/1 Anabul). Hapus data anabul yang ada atau upgrade ke VIP untuk menambah anabul baru.
+        {!isVip && pets.length >= 1 && !editingPet && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex flex-col gap-2">
+            <p>⚠️ Kuota akun gratis Anda sudah terpakai (1/1 Anabul). Hapus data anabul yang ada atau upgrade ke VIP untuk menambah anabul baru.</p>
+            <button
+              onClick={handleUpgradeVip}
+              className="self-start px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs shadow-sm transition-all"
+            >
+              👑 Upgrade VIP Sekarang (Rp 29rb)
+            </button>
           </div>
         )}
 
@@ -477,13 +553,13 @@ export default function Home() {
             className={`w-full py-2.5 rounded-xl font-medium text-white transition-all shadow-sm ${
               editingPet
                 ? 'bg-amber-600 hover:bg-amber-700'
-                : pets.length >= 1
+                : !isVip && pets.length >= 1
                 ? 'bg-slate-300 cursor-not-allowed text-slate-500'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
-            disabled={!editingPet && pets.length >= 1}
+            disabled={!isVip && !editingPet && pets.length >= 1}
           >
-            {editingPet ? 'Update Data Anabul' : pets.length >= 1 ? 'Batas Kuota Gratis (1/1 Anabul)' : 'Simpan Data Anabul'}
+            {editingPet ? 'Update Data Anabul' : !isVip && pets.length >= 1 ? 'Batas Kuota Gratis (1/1 Anabul)' : 'Simpan Data Anabul'}
           </button>
         </form>
       </div>
@@ -492,7 +568,7 @@ export default function Home() {
       <div className="space-y-4">
         <div className="flex justify-between items-center print:hidden">
           <h2 className="text-lg font-bold text-slate-800">
-            📋 Paspor Anabul Saya ({filteredPets.length}/1 Kuota Gratis)
+            📋 Paspor Anabul Saya ({filteredPets.length} {isVip ? '/ Unlimited VIP' : '/ 1 Kuota Gratis'})
           </h2>
         </div>
 
