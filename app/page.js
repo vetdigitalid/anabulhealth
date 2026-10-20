@@ -16,6 +16,7 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const [editingPet, setEditingPet] = useState(null)
   const [isVip, setIsVip] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -27,7 +28,8 @@ export default function Home() {
     life_stage: 'Dewasa',
     last_vaccine: '',
     deworming_date: '',
-    medical_history: ''
+    medical_history: '',
+    photo_url: ''
   })
 
   // Cek Sesi User & Status VIP saat Halaman Di-load
@@ -62,7 +64,7 @@ export default function Home() {
 
   // Ambil data profil user untuk cek status is_vip
   const fetchUserData = async (userId) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('is_vip')
       .eq('id', userId)
@@ -91,6 +93,36 @@ export default function Home() {
       setPets(data || [])
     }
     setLoading(false)
+  }
+
+  // Fungsi Upload Foto Anabul ke Supabase Storage
+  const handlePhotoUpload = async (e) => {
+    try {
+      setUploading(true)
+      const file = e.target.files[0]
+      if (!file) return
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('pet-photos')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from('pet-photos')
+        .getPublicUrl(filePath)
+
+      setForm((prev) => ({ ...prev, photo_url: data.publicUrl }))
+      alert('Foto anabul berhasil diunggah!')
+    } catch (error) {
+      alert('Gagal mengunggah foto: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   // Helper konversi format nomor WhatsApp ke 62xxx
@@ -244,7 +276,8 @@ export default function Home() {
       phone_number: formattedPhone,
       medical_history: form.medical_history,
       last_vaccine: form.last_vaccine || null,
-      deworming_date: form.deworming_date || null
+      deworming_date: form.deworming_date || null,
+      photo_url: form.photo_url || null
     }
 
     if (editingPet) {
@@ -284,7 +317,8 @@ export default function Home() {
       life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
       deworming_date: pet.deworming_date || '',
-      medical_history: pet.medical_history || ''
+      medical_history: pet.medical_history || '',
+      photo_url: pet.photo_url || ''
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -317,7 +351,8 @@ export default function Home() {
       life_stage: 'Dewasa',
       last_vaccine: '',
       deworming_date: '',
-      medical_history: ''
+      medical_history: '',
+      photo_url: ''
     })
   }
 
@@ -414,6 +449,34 @@ export default function Home() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Input Upload Foto Profil */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+              Foto Anabul:
+            </label>
+            <div className="flex items-center gap-3">
+              {form.photo_url ? (
+                <img
+                  src={form.photo_url}
+                  alt="Preview"
+                  className="w-14 h-14 rounded-full object-cover border border-slate-200 shadow-sm"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xl border border-dashed border-slate-300">
+                  📷
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={uploading}
+                className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+              />
+            </div>
+            {uploading && <p className="text-[10px] text-blue-500 mt-1 animate-pulse">Mengunggah foto...</p>}
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
               Nama Anabul <span className="text-rose-500">*</span>:
@@ -557,7 +620,7 @@ export default function Home() {
                 ? 'bg-slate-300 cursor-not-allowed text-slate-500'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
-            disabled={!isVip && !editingPet && pets.length >= 1}
+            disabled={(!isVip && !editingPet && pets.length >= 1) || uploading}
           >
             {editingPet ? 'Update Data Anabul' : !isVip && pets.length >= 1 ? 'Batas Kuota Gratis (1/1 Anabul)' : 'Simpan Data Anabul'}
           </button>
@@ -604,11 +667,25 @@ export default function Home() {
                   className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-slate-800 text-lg">{pet.name}</h3>
-                      <span className="text-xs px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
-                        {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {/* Avatar Foto Anabul */}
+                      {pet.photo_url ? (
+                        <img
+                          src={pet.photo_url}
+                          alt={pet.name}
+                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-xl text-blue-600 font-bold border border-blue-100">
+                          {pet.species === 'Kucing' ? '🐱' : pet.species === 'Anjing' ? '🐶' : '🐾'}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{pet.name}</h3>
+                        <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium inline-block mt-0.5">
+                          {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 print:hidden">
                       <button
