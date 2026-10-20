@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { toPng } from 'html-to-image'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -17,6 +18,9 @@ export default function Home() {
   const [editingPet, setEditingPet] = useState(null)
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
+  
+  const cardRefs = useRef({})
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -32,7 +36,6 @@ export default function Home() {
     photo_url: ''
   })
 
-  // Cek Sesi User & Status VIP saat Halaman Di-load
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -62,7 +65,6 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [router])
 
-  // Ambil data profil user untuk cek status is_vip
   const fetchUserData = async (userId) => {
     const { data } = await supabase
       .from('profiles')
@@ -75,7 +77,6 @@ export default function Home() {
     }
   }
 
-  // Ambil data anabul milik user
   const fetchPets = async (userId) => {
     setLoading(true)
     const targetUserId = userId || user?.id
@@ -95,7 +96,7 @@ export default function Home() {
     setLoading(false)
   }
 
-  // Fungsi Upload Foto Anabul ke Supabase Storage
+  // Fungsi Upload Foto Anabul
   const handlePhotoUpload = async (e) => {
     try {
       setUploading(true)
@@ -125,7 +126,25 @@ export default function Home() {
     }
   }
 
-  // Helper konversi format nomor WhatsApp ke 62xxx
+  // Fungsi Unduh Kartu Paspor Digital sebagai Gambar
+  const handleDownloadCard = async (pet) => {
+    const cardNode = cardRefs.current[pet.id]
+    if (!cardNode) return
+
+    try {
+      setDownloadingId(pet.id)
+      const dataUrl = await toPng(cardNode, { cacheBust: true, pixelRatio: 2 })
+      const link = document.createElement('a')
+      link.download = `Paspor_Anabul_${pet.name}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      alert('Gagal mengunduh kartu paspor: ' + err.message)
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   const formatPhoneNumber = (phone) => {
     if (!phone) return ''
     let cleaned = phone.replace(/[^0-9]/g, '')
@@ -135,7 +154,6 @@ export default function Home() {
     return cleaned
   }
 
-  // Fungsi Pembantu: Menghitung tanggal berikutnya berdasarkan life stage
   const calculateNextDate = (dateString, isPuppyOrKitten = false, type = 'vaccine') => {
     if (!dateString) return null
     const date = new Date(dateString)
@@ -158,7 +176,6 @@ export default function Home() {
     return date
   }
 
-  // Format tanggal ke tampilan lokal Indonesia
   const formatDateLocale = (dateObj) => {
     if (!dateObj) return ''
     return dateObj.toLocaleDateString('id-ID', {
@@ -168,7 +185,6 @@ export default function Home() {
     })
   }
 
-  // Menghitung sisa hari / status tenggat
   const getDueStatus = (nextDate) => {
     if (!nextDate) return null
     const today = new Date()
@@ -191,7 +207,6 @@ export default function Home() {
     }
   }
 
-  // Handler untuk memperbarui tindakan medis (Mark as Done)
   const handleMarkDone = async (petId, type) => {
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
     if (!confirm(`Tandai ${typeText} sudah diberikan hari ini?`)) return
@@ -215,7 +230,6 @@ export default function Home() {
     }
   }
 
-  // Handler untuk memicu Checkout Midtrans QRIS
   const handleUpgradeVip = async () => {
     try {
       const res = await fetch('/api/checkout', {
@@ -224,7 +238,7 @@ export default function Home() {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          amount: 29000 // Harga Paket VIP (Rp 29.000)
+          amount: 29000
         })
       });
 
@@ -259,7 +273,6 @@ export default function Home() {
     if (!form.name) return alert('Nama Anabul wajib diisi!')
     if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
 
-    // Validasi Freemium: Jika bukan VIP dan anabul sudah >= 1
     if (!isVip && !editingPet && pets.length >= 1) {
       alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftarkan 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
       return
@@ -652,7 +665,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {filteredPets.map((pet) => {
               const isYoung = pet.age && pet.age <= 6
               const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine') 
@@ -662,140 +675,200 @@ export default function Home() {
               const dewormingStatus = getDueStatus(nextDeworming)
 
               return (
-                <div
-                  key={pet.id}
-                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {/* Avatar Foto Anabul */}
+                <div key={pet.id} className="space-y-3">
+                  {/* Komponen Kartu Paspor Digital Estetik (Siap Unduh) */}
+                  <div
+                    ref={(el) => (cardRefs.current[pet.id] = el)}
+                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-xl border border-indigo-500/30"
+                  >
+                    {/* Pattern Accent */}
+                    <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    {/* Card Header */}
+                    <div className="flex justify-between items-start pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🐾</span>
+                        <div>
+                          <h4 className="font-extrabold tracking-wider text-sm bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-transparent">
+                            PASPOR KESEHATAN ANABUL
+                          </h4>
+                          <p className="text-[9px] text-slate-400 tracking-widest uppercase">Official Digital Pet Passport</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30">
+                        VERIFIED
+                      </span>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="flex items-center gap-4 py-4">
                       {pet.photo_url ? (
                         <img
                           src={pet.photo_url}
                           alt={pet.name}
-                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm"
+                          className="w-16 h-16 rounded-xl object-cover border-2 border-amber-400/80 shadow-md flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-xl text-blue-600 font-bold border border-blue-100">
+                        <div className="w-16 h-16 rounded-xl bg-indigo-900/60 flex items-center justify-center text-2xl text-amber-300 border border-amber-400/40 flex-shrink-0">
                           {pet.species === 'Kucing' ? '🐱' : pet.species === 'Anjing' ? '🐶' : '🐾'}
                         </div>
                       )}
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{pet.name}</h3>
-                        <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium inline-block mt-0.5">
-                          {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
-                        </span>
+
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <h3 className="text-xl font-black text-white truncate">{pet.name}</h3>
+                        <p className="text-xs text-amber-200/90 font-medium truncate">
+                          {pet.species} {pet.breed ? `• ${pet.breed}` : ''}
+                        </p>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-300 pt-1">
+                          {pet.age && <p><b>Umur:</b> {pet.age} Bln</p>}
+                          <p><b>ID:</b> #{pet.id.slice(0, 6).toUpperCase()}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 print:hidden">
-                      <button
-                        onClick={() => handleEdit(pet)}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                        title="Edit Data"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(pet.id, pet.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                        title="Hapus Data"
-                      >
-                        🗑️
-                      </button>
+
+                    {/* Card Footer Status */}
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/10 text-[10px]">
+                      <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                        <p className="text-slate-400">Jadwal Vaksin:</p>
+                        <p className="font-bold text-emerald-300 truncate">
+                          {nextVaccine ? formatDateLocale(nextVaccine) : 'Belum Ada'}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                        <p className="text-slate-400">Obat Cacing:</p>
+                        <p className="font-bold text-indigo-300 truncate">
+                          {nextDeworming ? formatDateLocale(nextDeworming) : 'Belum Ada'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Watermark Dokter Hewan */}
+                    <div className="mt-3 text-center text-[9px] text-slate-400 tracking-wider">
+                      drh. Nur Rohman Najib • Vet Health Services
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                    {pet.age && <p><b>Umur:</b> {pet.age} Bulan</p>}
-                    <span className="text-slate-300">|</span>
-                    <p className="text-blue-600 font-medium">
-                      Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
-                    </p>
-                    {pet.phone_number && (
-                      <>
-                        <span className="text-slate-300">|</span>
-                        <p className="text-slate-600">📱 WA: {pet.phone_number}</p>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Kotak Pengingat & Jadwal Vaksin / Obat Cacing */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
-                    {/* Vaksin Section */}
-                    {pet.last_vaccine ? (
-                      <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
-                        <div>
-                          <p className="text-emerald-800 font-semibold mb-1">
-                            💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
-                          </p>
-                          <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
-                          <p className="text-emerald-700 font-bold mt-0.5">
-                            Jatuh Tempo: {formatDateLocale(nextVaccine)}
-                          </p>
-                        </div>
-                        {vaccineStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
-                              {vaccineStatus.label}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
-                        💉 Belum ada riwayat vaksin
-                      </div>
-                    )}
-
-                    {/* Obat Cacing Section */}
-                    {pet.deworming_date ? (
-                      <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
-                        <div>
-                          <p className="text-indigo-800 font-semibold mb-1">
-                            💊 Obat Cacing {isYoung ? '(+1 Bln)' : '(+3 Bln)'}
-                          </p>
-                          <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
-                          <p className="text-indigo-700 font-bold mt-0.5">
-                            Jatuh Tempo: {formatDateLocale(nextDeworming)}
-                          </p>
-                        </div>
-                        {dewormingStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
-                              {dewormingStatus.label}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
-                        💊 Belum ada riwayat obat cacing
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tombol Aksi Cepat: Mark as Done */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
+                  {/* Tombol Unduh / Share Kartu */}
+                  <div className="flex justify-end print:hidden">
                     <button
-                      onClick={() => handleMarkDone(pet.id, 'vaccine')}
-                      className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      onClick={() => handleDownloadCard(pet)}
+                      disabled={downloadingId === pet.id}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
                     >
-                      ✅ Sudah Vaksin Hari Ini
-                    </button>
-                    <button
-                      onClick={() => handleMarkDone(pet.id, 'deworming')}
-                      className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
-                    >
-                      ✅ Sudah Obat Cacing Hari Ini
+                      {downloadingId === pet.id ? '⏳ Mengunduh...' : '📲 Simpan Kartu Paspor (PNG)'}
                     </button>
                   </div>
 
-                  {pet.medical_history && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
-                      <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
-                      {pet.medical_history}
+                  {/* Detail Rekam Medis & Tindakan */}
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-700">Detail Rekam Medis:</p>
+                      <div className="flex items-center gap-1 print:hidden">
+                        <button
+                          onClick={() => handleEdit(pet)}
+                          className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                          title="Edit Data"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDelete(pet.id, pet.name)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Hapus Data"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
-                  )}
+
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                      <p className="text-blue-600 font-medium">
+                        Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
+                      </p>
+                      {pet.phone_number && (
+                        <>
+                          <span className="text-slate-300">|</span>
+                          <p className="text-slate-600">📱 WA: {pet.phone_number}</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Kotak Status Jadwal */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+                      {pet.last_vaccine ? (
+                        <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
+                          <div>
+                            <p className="text-emerald-800 font-semibold mb-1">
+                              💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
+                            </p>
+                            <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
+                            <p className="text-emerald-700 font-bold mt-0.5">
+                              Jatuh Tempo: {formatDateLocale(nextVaccine)}
+                            </p>
+                          </div>
+                          {vaccineStatus && (
+                            <div className="mt-2">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
+                                {vaccineStatus.label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                          💉 Belum ada riwayat vaksin
+                        </div>
+                      )}
+
+                      {pet.deworming_date ? (
+                        <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
+                          <div>
+                            <p className="text-indigo-800 font-semibold mb-1">
+                              💊 Obat Cacing {isYoung ? '(+1 Bln)' : '(+3 Bln)'}
+                            </p>
+                            <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
+                            <p className="text-indigo-700 font-bold mt-0.5">
+                              Jatuh Tempo: {formatDateLocale(nextDeworming)}
+                            </p>
+                          </div>
+                          {dewormingStatus && (
+                            <div className="mt-2">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
+                                {dewormingStatus.label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                          💊 Belum ada riwayat obat cacing
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tombol Mark as Done */}
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
+                      <button
+                        onClick={() => handleMarkDone(pet.id, 'vaccine')}
+                        className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      >
+                        ✅ Sudah Vaksin Hari Ini
+                      </button>
+                      <button
+                        onClick={() => handleMarkDone(pet.id, 'deworming')}
+                        className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      >
+                        ✅ Sudah Obat Cacing Hari Ini
+                      </button>
+                    </div>
+
+                    {pet.medical_history && (
+                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
+                        <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
+                        {pet.medical_history}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })}
