@@ -24,15 +24,17 @@ export default function Home() {
     species: 'Kucing',
     breed: '',
     age: '',
+    weight: '',
     phone_number: '',
     life_stage: 'Dewasa',
     last_vaccine: '',
+    vaccine_type: 'Tricat (F3)',
     deworming_date: '',
     medical_history: '',
     photo_url: ''
   })
 
-  // Cek Sesi User & Status VIP saat Halaman Di-load
+  // Cek Sesi User & Status VIP
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -62,7 +64,6 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [router])
 
-  // Ambil data profil user untuk cek status is_vip
   const fetchUserData = async (userId) => {
     const { data } = await supabase
       .from('profiles')
@@ -75,7 +76,6 @@ export default function Home() {
     }
   }
 
-  // Ambil data anabul milik user
   const fetchPets = async (userId) => {
     setLoading(true)
     const targetUserId = userId || user?.id
@@ -95,7 +95,6 @@ export default function Home() {
     setLoading(false)
   }
 
-  // Fungsi Upload Foto Anabul ke Supabase Storage
   const handlePhotoUpload = async (e) => {
     try {
       setUploading(true)
@@ -125,7 +124,6 @@ export default function Home() {
     }
   }
 
-  // Helper konversi format nomor WhatsApp ke 62xxx
   const formatPhoneNumber = (phone) => {
     if (!phone) return ''
     let cleaned = phone.replace(/[^0-9]/g, '')
@@ -135,7 +133,6 @@ export default function Home() {
     return cleaned
   }
 
-  // Fungsi Pembantu: Menghitung tanggal berikutnya berdasarkan life stage
   const calculateNextDate = (dateString, isPuppyOrKitten = false, type = 'vaccine') => {
     if (!dateString) return null
     const date = new Date(dateString)
@@ -158,7 +155,6 @@ export default function Home() {
     return date
   }
 
-  // Format tanggal ke tampilan lokal Indonesia
   const formatDateLocale = (dateObj) => {
     if (!dateObj) return ''
     return dateObj.toLocaleDateString('id-ID', {
@@ -168,7 +164,6 @@ export default function Home() {
     })
   }
 
-  // Menghitung sisa hari / status tenggat
   const getDueStatus = (nextDate) => {
     if (!nextDate) return null
     const today = new Date()
@@ -191,7 +186,6 @@ export default function Home() {
     }
   }
 
-  // Handler untuk memperbarui tindakan medis (Mark as Done)
   const handleMarkDone = async (petId, type) => {
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
     if (!confirm(`Tandai ${typeText} sudah diberikan hari ini?`)) return
@@ -215,7 +209,6 @@ export default function Home() {
     }
   }
 
-  // Handler untuk memicu Checkout Midtrans QRIS
   const handleUpgradeVip = async () => {
     try {
       const res = await fetch('/api/checkout', {
@@ -224,7 +217,7 @@ export default function Home() {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          amount: 29000 // Harga Paket VIP (Rp 29.000)
+          amount: 29000
         })
       });
 
@@ -259,7 +252,6 @@ export default function Home() {
     if (!form.name) return alert('Nama Anabul wajib diisi!')
     if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
 
-    // Validasi Freemium: Jika bukan VIP dan anabul sudah >= 1
     if (!isVip && !editingPet && pets.length >= 1) {
       alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftarkan 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
       return
@@ -273,9 +265,11 @@ export default function Home() {
       species: form.species,
       breed: form.breed,
       age: form.age ? parseInt(form.age) : null,
+      weight: form.weight ? parseFloat(form.weight) : null,
       phone_number: formattedPhone,
       medical_history: form.medical_history,
       last_vaccine: form.last_vaccine || null,
+      vaccine_type: form.vaccine_type || null,
       deworming_date: form.deworming_date || null,
       photo_url: form.photo_url || null
     }
@@ -313,9 +307,11 @@ export default function Home() {
       species: pet.species || 'Kucing',
       breed: pet.breed || '',
       age: pet.age || '',
+      weight: pet.weight || '',
       phone_number: pet.phone_number || '',
       life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
+      vaccine_type: pet.vaccine_type || (pet.species === 'Anjing' ? 'Vanguard / Eurican (DHPPI)' : 'Tricat (F3)'),
       deworming_date: pet.deworming_date || '',
       medical_history: pet.medical_history || '',
       photo_url: pet.photo_url || ''
@@ -347,9 +343,11 @@ export default function Home() {
       species: 'Kucing',
       breed: '',
       age: '',
+      weight: '',
       phone_number: '',
       life_stage: 'Dewasa',
       last_vaccine: '',
+      vaccine_type: 'Tricat (F3)',
       deworming_date: '',
       medical_history: '',
       photo_url: ''
@@ -449,7 +447,7 @@ export default function Home() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Input Upload Foto Profil */}
+          {/* Upload Foto */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
               Foto Anabul:
@@ -498,7 +496,14 @@ export default function Home() {
               </label>
               <select
                 value={form.species}
-                onChange={(e) => setForm({ ...form, species: e.target.value })}
+                onChange={(e) => {
+                  const newSpecies = e.target.value
+                  setForm({
+                    ...form,
+                    species: newSpecies,
+                    vaccine_type: newSpecies === 'Anjing' ? 'Vanguard / Eurican (DHPPI)' : 'Tricat (F3)'
+                  })
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white"
               >
                 <option value="Kucing">Kucing</option>
@@ -538,7 +543,8 @@ export default function Home() {
             <p className="text-[10px] text-slate-400 mt-0.5">Wajib diisi agar notifikasi WhatsApp pengingat otomatis terkirim</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          {/* Umur & Berat Badan */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Umur (Bulan):
@@ -561,19 +567,65 @@ export default function Home() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
+                ⚖️ Berat Badan (Kg):
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                placeholder="3.5"
+                value={form.weight}
+                onChange={(e) => setForm({ ...form, weight: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Tanggal & Jenis Vaksin + Obat Cacing */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Vaksin Terakhir:
               </label>
               <input
                 type="date"
                 value={form.last_vaccine}
                 onChange={(e) => setForm({ ...form, last_vaccine: e.target.value })}
-                className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs"
+                className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs mb-2"
               />
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Jenis Vaksin:
+              </label>
+              <select
+                value={form.vaccine_type}
+                onChange={(e) => setForm({ ...form, vaccine_type: e.target.value })}
+                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-800"
+              >
+                {form.species === 'Kucing' ? (
+                  <>
+                    <option value="Tricat (F3)">Tricat (F3)</option>
+                    <option value="Tetracat (F4)">Tetracat (F4)</option>
+                    <option value="Rabies">Rabies</option>
+                    <option value="Felocell / Lainnya">Felocell / Lainnya</option>
+                  </>
+                ) : form.species === 'Anjing' ? (
+                  <>
+                    <option value="Vanguard / Eurican (DHPPI)">Vanguard / Eurican (DHPPI)</option>
+                    <option value="Rabies">Rabies</option>
+                    <option value="Parvo">Parvo</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Vaksin Standar">Vaksin Standar</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </>
+                )}
+              </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Obat Cacing:
+                Obat Cacing Terakhir:
               </label>
               <input
                 type="date"
@@ -668,7 +720,6 @@ export default function Home() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {/* Avatar Foto Anabul */}
                       {pet.photo_url ? (
                         <img
                           src={pet.photo_url}
@@ -705,29 +756,36 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                    {pet.age && <p><b>Umur:</b> {pet.age} Bulan</p>}
+                  {/* Informasi Ringkas Umur, Berat, dan WhatsApp */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    {pet.age && <p><b>Umur:</b> {pet.age} Bln</p>}
+                    {pet.weight && (
+                      <>
+                        <span className="text-slate-300">|</span>
+                        <p className="text-amber-700 font-medium">⚖️ <b>Berat:</b> {pet.weight} kg</p>
+                      </>
+                    )}
                     <span className="text-slate-300">|</span>
                     <p className="text-blue-600 font-medium">
                       Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
                     </p>
-                    {pet.phone_number && (
-                      <>
-                        <span className="text-slate-300">|</span>
-                        <p className="text-slate-600">📱 WA: {pet.phone_number}</p>
-                      </>
-                    )}
                   </div>
 
-                  {/* Kotak Pengingat & Jadwal Vaksin / Obat Cacing */}
+                  {/* Kotak Pengingat & Jenis Vaksin */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
-                    {/* Vaksin Section */}
                     {pet.last_vaccine ? (
                       <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
                         <div>
-                          <p className="text-emerald-800 font-semibold mb-1">
-                            💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
-                          </p>
+                          <div className="flex justify-between items-start">
+                            <p className="text-emerald-800 font-semibold mb-1">
+                              💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
+                            </p>
+                            {pet.vaccine_type && (
+                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">
+                                {pet.vaccine_type}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
                           <p className="text-emerald-700 font-bold mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextVaccine)}
@@ -747,7 +805,6 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Obat Cacing Section */}
                     {pet.deworming_date ? (
                       <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
                         <div>
@@ -774,7 +831,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Tombol Aksi Cepat: Mark as Done */}
+                  {/* Tombol Mark as Done */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
                     <button
                       onClick={() => handleMarkDone(pet.id, 'vaccine')}
