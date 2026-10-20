@@ -8,12 +8,23 @@ export async function POST(req) {
       return NextResponse.json({ error: 'User ID dan Email wajib diisi' }, { status: 400 });
     }
 
-    const orderId = `VIP-${userId.substring(0, 8)}-${Date.now()}`;
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
+
+    if (!serverKey) {
+      return NextResponse.json(
+        { error: 'MIDTRANS_SERVER_KEY belum diisi di Environment Variables Vercel' },
+        { status: 500 }
+      );
+    }
+
+    // Endpoint Resmi Production Midtrans Snap API
+    const snapUrl = 'https://app.midtrans.com/snap/v1/transactions';
+
+    // Membuat Order ID Unik (Contoh: VIP-a1b2c3d4-1700000000000)
+    const orderId = `VIP-${userId.substring(0, 8)}-${Date.now()}`;
     const authHeader = Buffer.from(serverKey + ':').toString('base64');
 
-    // Menggunakan Endpoint Midtrans Snap API
-    const response = await fetch('https://app.sandbox.midtrans.com/snap/v1/transactions', { // Ganti app.midtrans.com untuk Production
+    const response = await fetch(snapUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,9 +47,9 @@ export async function POST(req) {
         customer_details: {
           email: email,
         },
-        enabled_payments: ['gopay', 'qris', 'shopeepay'], // Fokus QRIS & E-Wallet
+        enabled_payments: ['gopay', 'qris', 'shopeepay'], // Metode pembayaran utama
         callbacks: {
-          finish: `${process.env.NEXT_PUBLIC_BASE_URL}/?status=success`
+          finish: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://anabulhealth.vercel.app'}/?status=success`
         }
       })
     });
@@ -46,12 +57,15 @@ export async function POST(req) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Gagal membuat transaksi Midtrans');
+      const errorMessage = Array.isArray(data.error_messages) 
+        ? data.error_messages.join(', ') 
+        : (data.message || 'Gagal membuat transaksi Midtrans Production');
+      throw new Error(errorMessage);
     }
 
     return NextResponse.json({ token: data.token, redirect_url: data.redirect_url });
   } catch (error) {
-    console.error('Error Checkout:', error);
+    console.error('Error Checkout Production:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
