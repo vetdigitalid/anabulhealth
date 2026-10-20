@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { toPng } from 'html-to-image'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -18,9 +17,7 @@ export default function Home() {
   const [editingPet, setEditingPet] = useState(null)
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [downloadingId, setDownloadingId] = useState(null)
-  
-  const cardRefs = useRef({})
+
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -96,7 +93,6 @@ export default function Home() {
     setLoading(false)
   }
 
-  // Fungsi Upload Foto Anabul
   const handlePhotoUpload = async (e) => {
     try {
       setUploading(true)
@@ -123,25 +119,6 @@ export default function Home() {
       alert('Gagal mengunggah foto: ' + error.message)
     } finally {
       setUploading(false)
-    }
-  }
-
-  // Fungsi Unduh Kartu Paspor Digital sebagai Gambar
-  const handleDownloadCard = async (pet) => {
-    const cardNode = cardRefs.current[pet.id]
-    if (!cardNode) return
-
-    try {
-      setDownloadingId(pet.id)
-      const dataUrl = await toPng(cardNode, { cacheBust: true, pixelRatio: 2 })
-      const link = document.createElement('a')
-      link.download = `Paspor_Anabul_${pet.name}.png`
-      link.href = dataUrl
-      link.click()
-    } catch (err) {
-      alert('Gagal mengunduh kartu paspor: ' + err.message)
-    } finally {
-      setDownloadingId(null)
     }
   }
 
@@ -462,7 +439,6 @@ export default function Home() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Input Upload Foto Profil */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
               Foto Anabul:
@@ -676,15 +652,8 @@ export default function Home() {
 
               return (
                 <div key={pet.id} className="space-y-3">
-                  {/* Komponen Kartu Paspor Digital Estetik (Siap Unduh) */}
-                  <div
-                    ref={(el) => (cardRefs.current[pet.id] = el)}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-xl border border-indigo-500/30"
-                  >
-                    {/* Pattern Accent */}
-                    <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-                    {/* Card Header */}
+                  {/* Kartu Paspor Digital (Tampilan Mewah & Estetik) */}
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-xl border border-indigo-500/30">
                     <div className="flex justify-between items-start pb-3 border-b border-white/10">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">🐾</span>
@@ -700,7 +669,6 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Card Body */}
                     <div className="flex items-center gap-4 py-4">
                       {pet.photo_url ? (
                         <img
@@ -726,7 +694,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Card Footer Status */}
                     <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/10 text-[10px]">
                       <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                         <p className="text-slate-400">Jadwal Vaksin:</p>
@@ -742,21 +709,9 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Watermark Dokter Hewan */}
                     <div className="mt-3 text-center text-[9px] text-slate-400 tracking-wider">
                       drh. Nur Rohman Najib • Vet Health Services
                     </div>
-                  </div>
-
-                  {/* Tombol Unduh / Share Kartu */}
-                  <div className="flex justify-end print:hidden">
-                    <button
-                      onClick={() => handleDownloadCard(pet)}
-                      disabled={downloadingId === pet.id}
-                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-                    >
-                      {downloadingId === pet.id ? '⏳ Mengunduh...' : '📲 Simpan Kartu Paspor (PNG)'}
-                    </button>
                   </div>
 
                   {/* Detail Rekam Medis & Tindakan */}
@@ -793,7 +748,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Kotak Status Jadwal */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
                       {pet.last_vaccine ? (
                         <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
@@ -846,7 +800,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Tombol Mark as Done */}
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
                       <button
                         onClick={() => handleMarkDone(pet.id, 'vaccine')}
