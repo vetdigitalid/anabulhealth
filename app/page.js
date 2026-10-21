@@ -18,8 +18,9 @@ export default function Home() {
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
   
-  // State Modal Bukti
+  // State Modal Bukti & TTD Vet Dinamis
   const [proofModal, setProofModal] = useState({ open: false, petId: null, type: null })
+  const [vetName, setVetName] = useState('')
   const [proofFile, setProofFile] = useState(null)
   const [submittingProof, setSubmittingProof] = useState(false)
 
@@ -195,37 +196,48 @@ export default function Home() {
     }
   }
 
-  // Buka Modal Unggah Bukti
+  // Buka Modal Unggah Bukti TTD
   const openMarkDoneModal = (petId, type) => {
     setProofModal({ open: true, petId, type })
     setProofFile(null)
+    setVetName('')
   }
 
-  // Simpan Status Selesai + Foto Bukti Stiker/Cap Vet
+  // Simpan Status Selesai + Foto Bukti TTD & Nama Dokter Hewan
   const handleConfirmMarkDone = async () => {
     const { petId, type } = proofModal
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
+
+    if (!proofFile) {
+      alert('⚠️ Wajib mengunggah foto stiker/cap/tanda tangan Dokter Hewan sebagai syarat verifikasi!')
+      return
+    }
+
+    if (!vetName.trim()) {
+      alert('⚠️ Wajib mengisi Nama Dokter Hewan yang memeriksa!')
+      return
+    }
+
     setSubmittingProof(true)
 
     try {
       let proofUrl = null
-      if (proofFile) {
-        const fileExt = proofFile.name.split('.').pop()
-        const fileName = `proof-${type}-${petId}-${Date.now()}.${fileExt}`
-        const { error: uploadErr } = await supabase.storage
-          .from('pet-photos')
-          .upload(fileName, proofFile)
+      const fileExt = proofFile.name.split('.').pop()
+      const fileName = `proof-${type}-${petId}-${Date.now()}.${fileExt}`
+      
+      const { error: uploadErr } = await supabase.storage
+        .from('pet-photos')
+        .upload(fileName, proofFile)
 
-        if (!uploadErr) {
-          const { data } = supabase.storage.from('pet-photos').getPublicUrl(fileName)
-          proofUrl = data.publicUrl
-        }
-      }
+      if (uploadErr) throw uploadErr
+
+      const { data } = supabase.storage.from('pet-photos').getPublicUrl(fileName)
+      proofUrl = data.publicUrl
 
       const todayStr = new Date().toISOString().split('T')[0]
       const updateData = type === 'vaccine' 
-        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl }
-        : { deworming_date: todayStr, deworming_proof_url: proofUrl }
+        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vet_signature_url: vetName }
+        : { deworming_date: todayStr, deworming_proof_url: proofUrl, vet_signature_url: vetName }
 
       const { error } = await supabase
         .from('pets')
@@ -233,14 +245,14 @@ export default function Home() {
         .eq('id', petId)
 
       if (!error) {
-        alert(`Berhasil memperbarui ${typeText}${proofUrl ? ' beserta bukti stiker/cap Vet!' : '!'}`)
+        alert(`Berhasil diverifikasi! Data ${typeText} oleh ${vetName} telah disimpan.`)
         setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
         alert(`Gagal: ${error.message}`)
       }
     } catch (err) {
-      alert('Terjadi kesalahan jaringan')
+      alert('Terjadi kesalahan jaringan/unggahan: ' + err.message)
     } finally {
       setSubmittingProof(false)
     }
@@ -857,11 +869,14 @@ export default function Home() {
                           <p className="text-emerald-700 font-bold mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextVaccine)}
                           </p>
+                          {pet.vet_signature_url && (
+                            <p className="text-[10px] text-slate-500 mt-1">🩺 Pemeriksa: <b>{pet.vet_signature_url}</b></p>
+                          )}
                         </div>
 
                         {pet.vaccine_proof_url && (
                           <div className="mt-2">
-                            <p className="text-[10px] font-semibold text-emerald-800 mb-1">🏷️ Bukti Stiker/Cap Vet:</p>
+                            <p className="text-[10px] font-semibold text-emerald-800 mb-1">🏷️ Bukti Stiker / TTD Vet:</p>
                             <img src={pet.vaccine_proof_url} alt="Bukti Vaksin" className="w-16 h-16 object-cover rounded-lg border border-emerald-200 shadow-sm" />
                           </div>
                         )}
@@ -890,11 +905,14 @@ export default function Home() {
                           <p className="text-indigo-700 font-bold mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextDeworming)}
                           </p>
+                          {pet.vet_signature_url && (
+                            <p className="text-[10px] text-slate-500 mt-1">🩺 Pemeriksa: <b>{pet.vet_signature_url}</b></p>
+                          )}
                         </div>
 
                         {pet.deworming_proof_url && (
                           <div className="mt-2">
-                            <p className="text-[10px] font-semibold text-indigo-800 mb-1">🏷️ Bukti Cap/Resep Vet:</p>
+                            <p className="text-[10px] font-semibold text-indigo-800 mb-1">🏷️ Bukti Cap / TTD Vet:</p>
                             <img src={pet.deworming_proof_url} alt="Bukti Obat Cacing" className="w-16 h-16 object-cover rounded-lg border border-indigo-200 shadow-sm" />
                           </div>
                         )}
@@ -914,19 +932,19 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Tombol Mark as Done dengan Bukti */}
+                  {/* Tombol Mark as Done dengan Bukti TTD & Nama Dokter Hewan */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'vaccine')}
                       className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
                     >
-                      ✅ Sudah Vaksin Hari Ini
+                      ✅ Verifikasi Vaksin Hari Ini
                     </button>
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'deworming')}
                       className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
                     >
-                      ✅ Sudah Obat Cacing Hari Ini
+                      ✅ Verifikasi Obat Cacing Hari Ini
                     </button>
                   </div>
 
@@ -944,7 +962,7 @@ export default function Home() {
       </div>
 
       {/* ======================================================== */}
-      {/* KHUSUS TAMPILAN BUKU PASPOR FISIK MEWAH SAAT DICETAK / PDF */}
+      {/* TAMPILAN BUKU PASPOR FISIK SAAT DICETAK / PDF */}
       {/* ======================================================== */}
       <div className="hidden print:block passport-book-container">
         {filteredPets.map((pet) => {
@@ -996,11 +1014,11 @@ export default function Home() {
                 <table className="w-full text-left border-collapse text-xs bg-white rounded-xl overflow-hidden border border-slate-200">
                   <thead>
                     <tr className="bg-amber-600 text-white text-[11px]">
-                      <th className="p-2 border">Kategori Penanganan</th>
+                      <th className="p-2 border">Penanganan</th>
                       <th className="p-2 border">Jenis Vaksin / Obat</th>
                       <th className="p-2 border">Tanggal Berikan</th>
-                      <th className="p-2 border">Jatuh Tempo Berikutnya</th>
-                      <th className="p-2 border text-center">Bukti / Stiker / Cap Vet</th>
+                      <th className="p-2 border">Jatuh Tempo</th>
+                      <th className="p-2 border text-center">Stiker / Cap / TTD Vet</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1011,9 +1029,12 @@ export default function Home() {
                       <td className="p-2 border font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
                       <td className="p-2 border text-center">
                         {pet.vaccine_proof_url ? (
-                          <img src={pet.vaccine_proof_url} alt="Stiker Vaksin" className="w-12 h-12 object-cover rounded mx-auto border" />
+                          <div className="space-y-1">
+                            <img src={pet.vaccine_proof_url} alt="Stiker/TTD Vaksin" className="w-12 h-12 object-cover rounded mx-auto border" />
+                            {pet.vet_signature_url && <p className="text-[8px] font-bold text-slate-700">{pet.vet_signature_url}</p>}
+                          </div>
                         ) : (
-                          <span className="text-[10px] text-slate-400 italic">[ Cap / Stiker Vet ]</span>
+                          <span className="text-[10px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
                       </td>
                     </tr>
@@ -1024,9 +1045,12 @@ export default function Home() {
                       <td className="p-2 border font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
                       <td className="p-2 border text-center">
                         {pet.deworming_proof_url ? (
-                          <img src={pet.deworming_proof_url} alt="Cap Obat Cacing" className="w-12 h-12 object-cover rounded mx-auto border" />
+                          <div className="space-y-1">
+                            <img src={pet.deworming_proof_url} alt="Cap/TTD Obat Cacing" className="w-12 h-12 object-cover rounded mx-auto border" />
+                            {pet.vet_signature_url && <p className="text-[8px] font-bold text-slate-700">{pet.vet_signature_url}</p>}
+                          </div>
                         ) : (
-                          <span className="text-[10px] text-slate-400 italic">[ Cap / Stiker Vet ]</span>
+                          <span className="text-[10px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
                       </td>
                     </tr>
@@ -1048,9 +1072,9 @@ export default function Home() {
                   <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs font-semibold text-slate-700 mb-10">Dokter Hewan Pemeriksa,</p>
-                  <p className="text-xs font-bold text-slate-900 underline">drh. Nur Rohman Najib</p>
-                  <p className="text-[10px] text-slate-500">SIP / STRV Active Member PDHI Jatim II</p>
+                  <p className="text-xs font-semibold text-slate-700 mb-1">Dokter Hewan Pemeriksa,</p>
+                  <p className="text-xs font-bold text-slate-900 underline">{pet.vet_signature_url || 'drh. Pemeriksa'}</p>
+                  <p className="text-[10px] text-slate-500">Stempel &amp; Tanda Tangan Terlampir</p>
                 </div>
               </div>
 
@@ -1059,13 +1083,13 @@ export default function Home() {
         })}
       </div>
 
-      {/* Modal Popup Upload Bukti Stiker / Cap Vet */}
+      {/* Modal Popup Verifikasi + Mandatory Unggah Foto TTD Dokter Hewan */}
       {proofModal.open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl border">
             <div className="flex justify-between items-center border-b pb-2">
               <h3 className="font-bold text-slate-800 text-sm">
-                📷 Unggah Bukti Stiker / Cap Vet ({proofModal.type === 'vaccine' ? 'Vaksin' : 'Obat Cacing'})
+                🩺 Verifikasi Dokter Hewan ({proofModal.type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'})
               </h3>
               <button
                 onClick={() => setProofModal({ open: false, petId: null, type: null })}
@@ -1075,18 +1099,36 @@ export default function Home() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-600">
-              Unggah foto stiker botol vaksin, cap klinik, atau foto tanda tangan Dokter Hewan sebagai bukti validasi (opsional).
-            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Dokter Hewan Pemeriksa <span className="text-rose-500">*</span>:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: drh. Ahmad Fauzi / drh. Nur Rohman Najib"
+                  value={vetName}
+                  onChange={(e) => setVetName(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700">Pilih Foto Bukti:</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProofFile(e.target.files[0])}
-                className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Unggah Foto Tanda Tangan / Stiker Cap Vet <span className="text-rose-500">*</span>:
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProofFile(e.target.files[0])}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                  required
+                />
+                <p className="text-[10px] text-amber-600 mt-1">
+                  *Wajib mengunggah foto stiker botol vaksin, stempel klinik, atau foto tanda tangan Dokter Hewan sebagai syarat keabsahan.
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t">
@@ -1099,10 +1141,14 @@ export default function Home() {
               </button>
               <button
                 onClick={handleConfirmMarkDone}
-                disabled={submittingProof}
-                className="px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm"
+                disabled={submittingProof || !proofFile || !vetName.trim()}
+                className={`px-4 py-1.5 text-xs font-semibold rounded-lg shadow-sm transition-all ${
+                  !proofFile || !vetName.trim()
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
               >
-                {submittingProof ? 'Menyimpan...' : 'Simpan &amp; Validasi'}
+                {submittingProof ? 'Memproses...' : '✅ Simpan & Verifikasi'}
               </button>
             </div>
           </div>
@@ -1127,7 +1173,6 @@ export default function Home() {
             </div>
 
             <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1">
-              {/* Syarat Umum */}
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <p className="font-bold text-amber-900 mb-1">⚠️ Syarat Penting Sebelum Vaksinasi:</p>
                 <ul className="list-disc list-inside space-y-1 text-amber-800">
@@ -1138,7 +1183,6 @@ export default function Home() {
                 </ul>
               </div>
 
-              {/* Panduan Kucing */}
               <div className="space-y-2">
                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                   🐱 Program Vaksinasi Kucing
@@ -1163,7 +1207,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Panduan Anjing */}
               <div className="space-y-2">
                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                   🐶 Program Vaksinasi Anjing
@@ -1184,7 +1227,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Aturan Sistem Paspor Anabul */}
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <p className="font-bold text-indigo-900 mb-1">⚙️ Aturan Perhitungan Sistem:</p>
                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
