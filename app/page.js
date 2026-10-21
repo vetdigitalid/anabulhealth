@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export default function Home() {
   const [user, setUser] = useState(null)
@@ -17,6 +15,7 @@ export default function Home() {
   const [editingPet, setEditingPet] = useState(null)
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [supabase, setSupabase] = useState(null)
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -34,68 +33,79 @@ export default function Home() {
     photo_url: ''
   })
 
-  // Cek Sesi User & Status VIP
+  // Inisialisasi Supabase Aman
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+    if (supabaseUrl && supabaseAnonKey) {
+      const client = createClient(supabaseUrl, supabaseAnonKey)
+      setSupabase(client)
+
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          router.push('/login')
+        } else {
+          setUser(session.user)
+          fetchUserData(client, session.user.id)
+          fetchPets(client, session.user.id)
+        }
+        setLoading(false)
+      }).catch(() => {
         router.push('/login')
-      } else {
-        setUser(session.user)
-        fetchUserData(session.user.id)
-        fetchPets(session.user.id)
-      }
-      setLoading(false)
+      })
+
+      const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          setUser(session.user)
+          fetchUserData(client, session.user.id)
+          fetchPets(client, session.user.id)
+        } else {
+          setUser(null)
+          router.push('/login')
+        }
+      })
+
+      return () => subscription?.unsubscribe()
+    } else {
+      router.push('/login')
     }
-
-    checkSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUser(session.user)
-        fetchUserData(session.user.id)
-        fetchPets(session.user.id)
-      } else {
-        setUser(null)
-        router.push('/login')
-      }
-    })
-
-    return () => subscription.unsubscribe()
   }, [router])
 
-  const fetchUserData = async (userId) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_vip')
-      .eq('id', userId)
-      .single()
+  const fetchUserData = async (client, userId) => {
+    try {
+      const { data } = await client
+        .from('profiles')
+        .select('is_vip')
+        .eq('id', userId)
+        .maybeSingle()
 
-    if (data) {
-      setIsVip(data.is_vip || false)
+      if (data) {
+        setIsVip(data.is_vip || false)
+      }
+    } catch (e) {
+      console.error('Error profile fetch:', e)
     }
   }
 
-  const fetchPets = async (userId) => {
-    setLoading(true)
-    const targetUserId = userId || user?.id
-    if (!targetUserId) return
+  const fetchPets = async (client, userId) => {
+    try {
+      setLoading(true)
+      const { data, error } = await client
+        .from('pets')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
-    const { data, error } = await supabase
-      .from('pets')
-      .select('*')
-      .eq('user_id', targetUserId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching pets:', error)
-    } else {
-      setPets(data || [])
+      if (!error && data) {
+        setPets(data)
+      }
+    } catch (e) {
+      console.error('Error pets fetch:', e)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handlePhotoUpload = async (e) => {
+    if (!supabase || !user) return
     try {
       setUploading(true)
       const file = e.target.files[0]
@@ -200,7 +210,7 @@ export default function Home() {
       const result = await res.json()
       if (result.success) {
         alert(`Berhasil memperbarui tanggal ${typeText}!`)
-        fetchPets(user.id)
+        fetchPets(supabase, user.id)
       } else {
         alert(`Gagal: ${result.error}`)
       }
@@ -228,14 +238,14 @@ export default function Home() {
 
       if (window.snap) {
         window.snap.pay(token, {
-          onSuccess: function(result) {
+          onSuccess: function() {
             alert("Pembayaran Berhasil! Akun Anda telah menjadi VIP.");
             window.location.reload();
           },
-          onPending: function(result) {
+          onPending: function() {
             alert("Menunggu pembayaran QRIS selesai...");
           },
-          onError: function(result) {
+          onError: function() {
             alert("Pembayaran gagal!");
           }
         });
@@ -249,11 +259,12 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!supabase || !user) return
     if (!form.name) return alert('Nama Anabul wajib diisi!')
-    if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi agar notifikasi pengingat dapat terkirim!')
+    if (!form.phone_number) return alert('Nomor WhatsApp wajib diisi!')
 
     if (!isVip && !editingPet && pets.length >= 1) {
-      alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftarkan 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
+      alert('⚠️ Batas Kuota Gratis Tercapai!\n\nAkun gratis hanya dapat mendaftaran 1 Anabul. Silakan upgrade ke akun VIP untuk menambah lebih banyak anabul.')
       return
     }
 
@@ -285,7 +296,7 @@ export default function Home() {
       } else {
         alert('Data anabul berhasil diperbarui!')
         resetForm()
-        fetchPets(user.id)
+        fetchPets(supabase, user.id)
       }
     } else {
       const { error } = await supabase.from('pets').insert([payload])
@@ -295,7 +306,7 @@ export default function Home() {
       } else {
         alert('Data anabul berhasil disimpan!')
         resetForm()
-        fetchPets(user.id)
+        fetchPets(supabase, user.id)
       }
     }
   }
@@ -320,19 +331,22 @@ export default function Home() {
   }
 
   const handleDelete = async (id, name) => {
+    if (!supabase || !user) return
     if (confirm(`Apakah Anda yakin ingin menghapus data rekam medis ${name}?`)) {
       const { error } = await supabase.from('pets').delete().eq('id', id)
       if (error) {
         alert('Gagal menghapus data: ' + error.message)
       } else {
         alert('Data berhasil dihapus!')
-        fetchPets(user.id)
+        fetchPets(supabase, user.id)
       }
     }
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     router.push('/login')
   }
 
@@ -359,15 +373,15 @@ export default function Home() {
   }
 
   const filteredPets = pets.filter((pet) =>
-    pet.name.toLowerCase().includes(search.toLowerCase()) ||
+    (pet.name && pet.name.toLowerCase().includes(search.toLowerCase())) ||
     (pet.breed && pet.breed.toLowerCase().includes(search.toLowerCase())) ||
     (pet.medical_history && pet.medical_history.toLowerCase().includes(search.toLowerCase()))
   )
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <p className="text-slate-500 text-sm animate-pulse">Memeriksa sesi login...</p>
+        <p className="text-slate-500 text-sm animate-pulse">Memuat Paspor Anabul...</p>
       </div>
     )
   }
@@ -713,15 +727,13 @@ export default function Home() {
               return (
                 <div key={pet.id} className="space-y-4">
                   
-                  {/* KARTU PASPOR DIGITAL ESTETIK (Desain VIP Gold / Ready Share Status WA/IG) */}
+                  {/* KARTU PASPOR DIGITAL ESTETIK (Desain VIP Gold) */}
                   <div className="relative overflow-hidden rounded-3xl bg-slate-950 text-white p-6 shadow-2xl border-2 border-amber-500/40">
                     
-                    {/* Background Pattern Watermark */}
                     <div className="absolute -right-8 -bottom-8 opacity-5 text-9xl pointer-events-none select-none">
                       🐾
                     </div>
 
-                    {/* Header Kartu Paspor */}
                     <div className="flex justify-between items-center pb-4 border-b border-amber-500/30">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 flex items-center justify-center text-slate-950 font-black text-lg shadow-md">
@@ -736,14 +748,12 @@ export default function Home() {
                       </div>
                       <div className="text-right">
                         <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 text-[10px] font-bold rounded-full border border-amber-500/30 tracking-wider">
-                          #PASSP-{pet.id.slice(0, 6).toUpperCase()}
+                          #PASSP-{pet.id ? pet.id.slice(0, 6).toUpperCase() : 'VIP'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Isi Utama Kartu (Foto + Detail Paspor) */}
                     <div className="grid grid-cols-12 gap-4 py-5 items-center">
-                      {/* Foto Anabul Frame Gold */}
                       <div className="col-span-4 flex justify-center">
                         <div className="relative">
                           <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-xl bg-slate-900 flex items-center justify-center">
@@ -759,13 +769,12 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-                          <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-slate-950 p-1 rounded-full text-xs shadow-lg border border-slate-950" title="Terverifikasi">
+                          <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-slate-950 p-1 rounded-full text-xs shadow-lg border border-slate-950">
                             ✓
                           </div>
                         </div>
                       </div>
 
-                      {/* Detail Informasi Paspor */}
                       <div className="col-span-8 space-y-2 text-xs">
                         <div>
                           <p className="text-[9px] text-slate-400 uppercase tracking-wider">Nama Anabul</p>
@@ -798,7 +807,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Schedule Bar (Status Masa Berlaku) */}
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] mb-3">
                       <div>
                         <p className="text-slate-400 text-[10px]">🗓️ Jadwal Vaksinasi Ulang:</p>
@@ -814,7 +822,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Footer Stempel / Validasi Dokter Hewan */}
                     <div className="flex justify-between items-end pt-2 border-t border-white/10 text-[9px] text-slate-400">
                       <div>
                         <p className="text-amber-300 font-bold tracking-wider">VETERINARY HEALTH SERVICE</p>
@@ -830,7 +837,7 @@ export default function Home() {
 
                   </div>
 
-                  {/* DETAIL REKAM MEDIS & ACTION BUTTONS */}
+                  {/* Detail Rekam Medis */}
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold text-slate-700">Detail Rekam Medis:</p>
@@ -838,14 +845,12 @@ export default function Home() {
                         <button
                           onClick={() => handleEdit(pet)}
                           className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                          title="Edit Data"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => handleDelete(pet.id, pet.name)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                          title="Hapus Data"
                         >
                           🗑️
                         </button>
@@ -864,7 +869,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Status Tenggat */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
                       {pet.last_vaccine ? (
                         <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
@@ -924,7 +928,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Tombol Tindakan Cepat */}
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
                       <button
                         onClick={() => handleMarkDone(pet.id, 'vaccine')}
