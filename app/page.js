@@ -186,24 +186,22 @@ export default function Home() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) {
-      return { label: `Jatuh tempo (${Math.abs(diffDays)} hr lalu)`, color: 'bg-rose-100 text-rose-700 border-rose-200' }
+      return { label: `Jatuh tempo (${Math.abs(diffDays)} hr lalu)`, color: 'bg-rose-50 text-rose-700 border-rose-200' }
     } else if (diffDays === 0) {
-      return { label: 'Jadwal Hari Ini!', color: 'bg-amber-100 text-amber-800 border-amber-300 font-bold animate-pulse' }
+      return { label: 'Jadwal Hari Ini!', color: 'bg-amber-50 text-amber-800 border-amber-300 font-bold animate-pulse' }
     } else if (diffDays <= 14) {
-      return { label: `${diffDays} hari lagi`, color: 'bg-amber-50 text-amber-700 border-amber-200' }
+      return { label: `${diffDays} hari lagi`, color: 'bg-amber-50/80 text-amber-700 border-amber-200' }
     } else {
-      return { label: `${diffDays} hari lagi`, color: 'bg-slate-100 text-slate-600 border-slate-200' }
+      return { label: `${diffDays} hari lagi`, color: 'bg-slate-50 text-slate-600 border-slate-200' }
     }
   }
 
-  // Buka Modal Unggah Bukti TTD
   const openMarkDoneModal = (petId, type) => {
     setProofModal({ open: true, petId, type })
     setProofFile(null)
     setVetName('')
   }
 
-  // Simpan Status Selesai + Foto Bukti TTD & Nama Dokter Hewan Per Tindakan
   const handleConfirmMarkDone = async () => {
     const { petId, type } = proofModal
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
@@ -423,7 +421,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-slate-100/70 p-4 md:p-8 max-w-2xl mx-auto font-sans">
       {/* CSS Khusus Pengaturan Cetak Buku Paspor Premium */}
       <style jsx global>{`
         @media print {
@@ -442,105 +440,113 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
-            {isVip && (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-200">
-                👑 VIP MEMBER
-              </span>
-            )}
+      {/* Header Elegan */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm mb-5 print:hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-xl">
+              🐾
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight">PASPOR ANABUL</h1>
+                {isVip && (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-200">
+                    👑 VIP
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">{user.email}</p>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 break-all">{user.email}</p>
-        </div>
-        <div className="flex gap-1.5 items-center flex-wrap w-full sm:w-auto justify-end">
-          {!isVip && (
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+            {!isVip && (
+              <button
+                onClick={handleUpgradeVip}
+                className="text-xs px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 font-bold shadow-sm shadow-amber-500/20 transition-all flex items-center gap-1"
+              >
+                👑 Upgrade VIP
+              </button>
+            )}
             <button
-              onClick={handleUpgradeVip}
-              className="text-xs px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 font-bold shadow-sm transition-all animate-bounce"
+              onClick={handlePrint}
+              className="text-xs px-3 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold transition-all flex items-center gap-1"
+              title="Cetak Buku Paspor"
             >
-              👑 Upgrade VIP
+              🖨️ Cetak
             </button>
-          )}
-          <button
-            onClick={handlePrint}
-            className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-bold transition-all border border-blue-200 shadow-sm"
-            title="Cetak Paspor Anabul"
-          >
-            🖨️ Cetak Buku Paspor
-          </button>
-          <button
-            onClick={handleLogout}
-            className="text-xs px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-medium transition-all"
-          >
-            🚪 Keluar
-          </button>
+            <button
+              onClick={handleLogout}
+              className="text-xs px-3 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 font-semibold transition-all"
+            >
+              Keluar
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Banner Himbauan Pengingat WA & Tombol Panduan Vaksin */}
-      <div className="mb-6 space-y-2 print:hidden">
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-base">📲</span>
-            <p>
-              <b>Notifikasi Pengingat Ganda:</b> Masukkan nomor WhatsApp yang aktif agar Anda menerima jadwal via <b>Email</b> &amp; <b>WhatsApp</b>!
-            </p>
+      {/* Banner & Tombol Panduan */}
+      <div className="mb-6 space-y-3 print:hidden">
+        <div className="p-4 bg-sky-50/80 border border-sky-100 rounded-2xl text-xs text-sky-900 flex items-start gap-3 shadow-sm">
+          <span className="text-lg mt-0.5">📲</span>
+          <div className="leading-relaxed">
+            <span className="font-bold block mb-0.5">Notifikasi Pengingat Aktif</span>
+            Pastikan nomor WhatsApp terisi dengan benar agar sistem mengirimkan pengingat otomatis via <b>Email &amp; WhatsApp</b>.
           </div>
         </div>
 
-        {/* Tombol Panduan Program Vaksinasi */}
         <button
           onClick={() => setShowGuideModal(true)}
-          className="w-full py-2 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all"
+          className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-2xl shadow-md shadow-blue-500/15 flex items-center justify-center gap-2 transition-all"
         >
-          <span>📖 Program Vaksinasi Anabul (Panduan &amp; Aturan)</span>
+          <span>📖 Buka Panduan &amp; Aturan Program Vaksinasi</span>
         </button>
       </div>
 
-      {/* Form Tambah / Edit Anabul */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 print:hidden">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
-          <span>{editingPet ? '✏️ Edit Data Anabul' : '➕ Tambah Anabul'}</span>
+      {/* Form Tambah / Edit Anabul Modern */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 mb-8 print:hidden">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <span>{editingPet ? '✏️ Edit Data Anabul' : '➕ Tambah Anabul Baru'}</span>
+          </h2>
           {editingPet && (
             <button
               onClick={resetForm}
-              className="text-xs text-rose-500 hover:underline"
+              className="text-xs text-rose-500 font-semibold hover:underline"
             >
-              Batal Edit
+              Batalkan Edit
             </button>
           )}
-        </h2>
+        </div>
 
         {!isVip && pets.length >= 1 && !editingPet && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex flex-col gap-2">
-            <p>⚠️ Kuota akun gratis Anda sudah terpakai (1/1 Anabul). Hapus data anabul yang ada atau upgrade ke VIP untuk menambah anabul baru.</p>
+          <div className="mb-5 p-4 bg-amber-50 border border-amber-200/70 rounded-2xl text-xs text-amber-900 flex flex-col gap-2.5">
+            <p className="leading-relaxed">⚠️ Kuota akun gratis Anda telah terpakai (1/1 Anabul). Upgrade ke VIP untuk menikmati akses tanpa batas.</p>
             <button
               onClick={handleUpgradeVip}
-              className="self-start px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs shadow-sm transition-all"
+              className="self-start px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shadow-sm shadow-amber-600/20 transition-all"
             >
-              👑 Upgrade VIP Sekarang (Rp 29rb)
+              👑 Upgrade VIP (Rp 29.000)
             </button>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Upload Foto */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Foto Anabul:
+          <div className="p-3 bg-slate-50/70 rounded-2xl border border-slate-100">
+            <label className="block text-xs font-semibold text-slate-600 mb-2">
+              Foto Profil Anabul:
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {form.photo_url ? (
                 <img
                   src={form.photo_url}
                   alt="Preview"
-                  className="w-14 h-14 rounded-full object-cover border border-slate-200 shadow-sm"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xl border border-dashed border-slate-300">
+                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-slate-300 text-2xl border border-dashed border-slate-200 shadow-sm">
                   📷
                 </div>
               )}
@@ -549,14 +555,14 @@ export default function Home() {
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 disabled={uploading}
-                className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                className="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
               />
             </div>
-            {uploading && <p className="text-[10px] text-blue-500 mt-1 animate-pulse">Mengunggah foto...</p>}
+            {uploading && <p className="text-[10px] text-blue-500 mt-2 animate-pulse font-medium">Mengunggah foto...</p>}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Nama Anabul <span className="text-rose-500">*</span>:
             </label>
             <input
@@ -564,15 +570,15 @@ export default function Home() {
               placeholder="Contoh: Milo"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Jenis:
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Jenis Hewan:
               </label>
               <select
                 value={form.species}
@@ -584,7 +590,7 @@ export default function Home() {
                     vaccine_type: newSpecies === 'Anjing' ? 'Vanguard / Eurican (DHPPI)' : 'Tricat (F3)'
                   })
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white"
+                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               >
                 <option value="Kucing">Kucing</option>
                 <option value="Anjing">Anjing</option>
@@ -595,38 +601,37 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Ras/Breed:
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Ras / Breed:
               </label>
               <input
                 type="text"
-                placeholder="Persia / Domestic"
+                placeholder="Persia / Domestik"
                 value={form.breed}
                 onChange={(e) => setForm({ ...form, breed: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Nomor WhatsApp Penerima Notifikasi <span className="text-rose-500">*</span>:
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Nomor WhatsApp Pemilik <span className="text-rose-500">*</span>:
             </label>
             <input
               type="text"
-              placeholder="081215667746 atau 6281215667746"
+              placeholder="081234567890"
               value={form.phone_number}
               onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               required
             />
-            <p className="text-[10px] text-slate-400 mt-0.5">Wajib diisi agar notifikasi WhatsApp pengingat otomatis terkirim</p>
+            <p className="text-[10px] text-slate-400 mt-1">Format bebas (08... atau 628...). Otomatis tersinkronisasi untuk pengingat WA.</p>
           </div>
 
-          {/* Umur & Berat Badan */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Umur (Bulan):
               </label>
               <input
@@ -641,12 +646,12 @@ export default function Home() {
                     life_stage: val && parseInt(val) <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa'
                   })
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 ⚖️ Berat Badan (Kg):
               </label>
               <input
@@ -655,30 +660,29 @@ export default function Home() {
                 placeholder="3.5"
                 value={form.weight}
                 onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+                className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               />
             </div>
           </div>
 
-          {/* Tanggal & Jenis Vaksin + Obat Cacing */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50/70 rounded-2xl border border-slate-100">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Vaksin Terakhir:
               </label>
               <input
                 type="date"
                 value={form.last_vaccine}
                 onChange={(e) => setForm({ ...form, last_vaccine: e.target.value })}
-                className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs mb-2"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 mb-2"
               />
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                 Jenis Vaksin:
               </label>
               <select
                 value={form.vaccine_type}
                 onChange={(e) => setForm({ ...form, vaccine_type: e.target.value })}
-                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-800"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800"
               >
                 {form.species === 'Kucing' ? (
                   <>
@@ -704,83 +708,83 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Obat Cacing Terakhir:
               </label>
               <input
                 type="date"
                 value={form.deworming_date}
                 onChange={(e) => setForm({ ...form, deworming_date: e.target.value })}
-                className="w-full px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-xs"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Status Program Vaksin:
             </label>
             <select
               value={form.life_stage}
               onChange={(e) => setForm({ ...form, life_stage: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
             >
               <option value="Dewasa">Dewasa (Booster Tahunan / 1 Tahun Sekali)</option>
-              <option value="Anak (Kitten/Puppy)">Anak / Kitten / Puppy (Seri Vaksin Primer / 1 Bulan Sekali)</option>
+              <option value="Anak (Kitten/Puppy)">Kitten/Puppy (Seri Vaksin Primer / 1 Bulan Sekali)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Catatan Medis & Keluhan:
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Catatan Medis &amp; Keluhan:
             </label>
             <textarea
               rows="3"
-              placeholder="Riwayat penyakit, pengobatan, alergi makanan, atau pesan dokter..."
+              placeholder="Riwayat penyakit, alergi, atau pesan khusus dari dokter..."
               value={form.medical_history}
               onChange={(e) => setForm({ ...form, medical_history: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
             ></textarea>
           </div>
 
           <button
             type="submit"
-            className={`w-full py-2.5 rounded-xl font-medium text-white transition-all shadow-sm ${
+            className={`w-full py-3 rounded-xl font-bold text-xs transition-all shadow-sm ${
               editingPet
-                ? 'bg-amber-600 hover:bg-amber-700'
+                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
                 : !isVip && pets.length >= 1
-                ? 'bg-slate-300 cursor-not-allowed text-slate-500'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'
             }`}
             disabled={(!isVip && !editingPet && pets.length >= 1) || uploading}
           >
-            {editingPet ? 'Update Data Anabul' : !isVip && pets.length >= 1 ? 'Batas Kuota Gratis (1/1 Anabul)' : 'Simpan Data Anabul'}
+            {editingPet ? '💾 Simpan Perubahan Data' : !isVip && pets.length >= 1 ? '🔒 Batas Kuota Gratis Tercapai' : '➕ Simpan Data Anabul'}
           </button>
         </form>
       </div>
 
       {/* Daftar Rekam Medis (Tampilan Layar HP/Web) */}
       <div className="space-y-4 print:hidden">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-800">
-            📋 Paspor Anabul Saya ({filteredPets.length} {isVip ? '/ Unlimited VIP' : '/ 1 Kuota Gratis'})
+        <div className="flex justify-between items-center px-1">
+          <h2 className="text-base font-extrabold text-slate-800">
+            📋 Paspor Anabul Saya <span className="text-xs font-normal text-slate-400">({filteredPets.length})</span>
           </h2>
         </div>
 
         <input
           type="text"
-          placeholder="🔍 Cari nama, ras, atau riwayat medis..."
+          placeholder="🔍 Cari berdasarkan nama, ras, atau riwayat medis..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm"
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-xs shadow-sm transition-all"
         />
 
         {loading ? (
-          <p className="text-center text-slate-400 py-8 text-sm">Memuat data...</p>
+          <p className="text-center text-slate-400 py-10 text-xs animate-pulse">Memuat data rekam medis...</p>
         ) : filteredPets.length === 0 ? (
-          <div className="bg-white p-8 text-center rounded-2xl border border-slate-200">
-            <p className="text-slate-400 text-sm">
-              {search ? 'Tidak ada data yang cocok.' : 'Belum ada data anabul terdaftar.'}
+          <div className="bg-white p-8 text-center rounded-3xl border border-slate-200/80 shadow-sm">
+            <p className="text-slate-400 text-xs">
+              {search ? 'Tidak ada data anabul yang cocok dengan pencarian.' : 'Belum ada data anabul yang terdaftar.'}
             </p>
           </div>
         ) : (
@@ -796,39 +800,39 @@ export default function Home() {
               return (
                 <div
                   key={pet.id}
-                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
+                  className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 hover:border-slate-300 transition-all"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
                       {pet.photo_url ? (
                         <img
                           src={pet.photo_url}
                           alt={pet.name}
-                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm"
+                          className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-sm"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-xl text-blue-600 font-bold border border-blue-100">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-xl text-amber-600 font-bold border border-amber-100">
                           {pet.species === 'Kucing' ? '🐱' : pet.species === 'Anjing' ? '🐶' : '🐾'}
                         </div>
                       )}
                       <div>
-                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{pet.name}</h3>
-                        <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium inline-block mt-0.5">
-                          {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
+                        <h3 className="font-extrabold text-slate-800 text-base leading-snug">{pet.name}</h3>
+                        <span className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-medium inline-block mt-0.5">
+                          {pet.species} {pet.breed ? `• ${pet.breed}` : ''}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
                       <button
                         onClick={() => handleEdit(pet)}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-white rounded-lg transition-all"
                         title="Edit Data"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleDelete(pet.id, pet.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-white rounded-lg transition-all"
                         title="Hapus Data"
                       >
                         🗑️
@@ -836,122 +840,119 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Informasi Ringkas Umur, Berat, dan WhatsApp */}
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                    {pet.age && <p><b>Umur:</b> {pet.age} Bln</p>}
-                    {pet.weight && (
-                      <>
-                        <span className="text-slate-300">|</span>
-                        <p className="text-amber-700 font-medium">⚖️ <b>Berat:</b> {pet.weight} kg</p>
-                      </>
-                    )}
-                    <span className="text-slate-300">|</span>
-                    <p className="text-blue-600 font-medium">
-                      Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
-                    </p>
+                  {/* Informasi Ringkas Umur, Berat, Program */}
+                  <div className="grid grid-cols-3 gap-2 bg-slate-50/70 p-2.5 rounded-2xl text-center text-[11px] text-slate-600 border border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Umur</span>
+                      <strong className="text-slate-800">{pet.age ? `${pet.age} Bln` : '-'}</strong>
+                    </div>
+                    <div className="border-x border-slate-200">
+                      <span className="text-slate-400 block text-[10px]">Berat Badan</span>
+                      <strong className="text-amber-700">{pet.weight ? `${pet.weight} kg` : '-'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Program</span>
+                      <strong className="text-blue-600">{isYoung ? 'Kitten' : 'Dewasa'}</strong>
+                    </div>
                   </div>
 
-                  {/* Kotak Pengingat & Jenis Vaksin */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+                  {/* Kotak Pengingat Vaksin & Obat Cacing */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     {pet.last_vaccine ? (
-                      <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
+                      <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 flex flex-col justify-between space-y-2">
                         <div>
-                          <div className="flex justify-between items-start">
-                            <p className="text-emerald-800 font-semibold mb-1">
-                              💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
-                            </p>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-emerald-900 font-bold text-[11px]">💉 Vaksin Terakhir</span>
                             {pet.vaccine_type && (
-                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">
+                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[9px] rounded">
                                 {pet.vaccine_type}
                               </span>
                             )}
                           </div>
-                          <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
-                          <p className="text-emerald-700 font-bold mt-0.5">
+                          <p className="text-slate-500 text-[11px]">Tgl: <b>{pet.last_vaccine}</b></p>
+                          <p className="text-emerald-700 font-bold text-[11px] mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextVaccine)}
                           </p>
                           {pet.vaccine_vet_name && (
-                            <p className="text-[10px] text-emerald-900 font-medium mt-1">🩺 Pemeriksa: <b>{pet.vaccine_vet_name}</b></p>
+                            <p className="text-[10px] text-emerald-900 mt-1">🩺 <b>{pet.vaccine_vet_name}</b></p>
                           )}
                         </div>
 
                         {pet.vaccine_proof_url && (
-                          <div className="mt-2">
-                            <p className="text-[10px] font-semibold text-emerald-800 mb-1">🏷️ Bukti Stiker / TTD Vet:</p>
-                            <img src={pet.vaccine_proof_url} alt="Bukti Vaksin" className="w-16 h-16 object-cover rounded-lg border border-emerald-200 shadow-sm" />
+                          <div className="pt-2 border-t border-emerald-100/60 flex items-center gap-2">
+                            <img src={pet.vaccine_proof_url} alt="Bukti Vaksin" className="w-10 h-10 object-cover rounded-xl border border-emerald-200 shadow-sm" />
+                            <span className="text-[10px] text-emerald-800 font-medium">Stiker/TTD Terunggah</span>
                           </div>
                         )}
 
                         {vaccineStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
+                          <div>
+                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-lg border font-medium ${vaccineStatus.color}`}>
                               {vaccineStatus.label}
                             </span>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100 text-slate-400 flex items-center justify-center text-center text-xs italic">
                         💉 Belum ada riwayat vaksin
                       </div>
                     )}
 
                     {pet.deworming_date ? (
-                      <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
+                      <div className="bg-indigo-50/50 p-3.5 rounded-2xl border border-indigo-100 flex flex-col justify-between space-y-2">
                         <div>
-                          <p className="text-indigo-800 font-semibold mb-1">
-                            💊 Obat Cacing {isYoung ? '(+1 Bln)' : '(+3 Bln)'}
-                          </p>
-                          <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
-                          <p className="text-indigo-700 font-bold mt-0.5">
+                          <span className="text-indigo-900 font-bold text-[11px] block mb-1">💊 Obat Cacing Terakhir</span>
+                          <p className="text-slate-500 text-[11px]">Tgl: <b>{pet.deworming_date}</b></p>
+                          <p className="text-indigo-700 font-bold text-[11px] mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextDeworming)}
                           </p>
                           {pet.deworming_vet_name && (
-                            <p className="text-[10px] text-indigo-900 font-medium mt-1">🩺 Pemeriksa: <b>{pet.deworming_vet_name}</b></p>
+                            <p className="text-[10px] text-indigo-900 mt-1">🩺 <b>{pet.deworming_vet_name}</b></p>
                           )}
                         </div>
 
                         {pet.deworming_proof_url && (
-                          <div className="mt-2">
-                            <p className="text-[10px] font-semibold text-indigo-800 mb-1">🏷️ Bukti Cap / TTD Vet:</p>
-                            <img src={pet.deworming_proof_url} alt="Bukti Obat Cacing" className="w-16 h-16 object-cover rounded-lg border border-indigo-200 shadow-sm" />
+                          <div className="pt-2 border-t border-indigo-100/60 flex items-center gap-2">
+                            <img src={pet.deworming_proof_url} alt="Bukti Obat Cacing" className="w-10 h-10 object-cover rounded-xl border border-indigo-200 shadow-sm" />
+                            <span className="text-[10px] text-indigo-800 font-medium">Stempel/TTD Terunggah</span>
                           </div>
                         )}
 
                         {dewormingStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
+                          <div>
+                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-lg border font-medium ${dewormingStatus.color}`}>
                               {dewormingStatus.label}
                             </span>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100 text-slate-400 flex items-center justify-center text-center text-xs italic">
                         💊 Belum ada riwayat obat cacing
                       </div>
                     )}
                   </div>
 
-                  {/* Tombol Mark as Done dengan Bukti TTD & Nama Dokter Hewan */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  {/* Tombol Aksi Verifikasi Cepat */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'vaccine')}
-                      className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      className="py-2 px-3 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200/60 transition-all flex items-center justify-center gap-1.5"
                     >
-                      ✅ Verifikasi Vaksin Hari Ini
+                      <span>✅</span> Verifikasi Vaksin
                     </button>
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'deworming')}
-                      className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      className="py-2 px-3 text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded-xl border border-indigo-200/60 transition-all flex items-center justify-center gap-1.5"
                     >
-                      ✅ Verifikasi Obat Cacing Hari Ini
+                      <span>✅</span> Verifikasi Cacing
                     </button>
                   </div>
 
                   {pet.medical_history && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
-                      <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
+                    <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                      <span className="font-bold text-slate-700 block mb-1">Catatan Medis:</span>
                       {pet.medical_history}
                     </div>
                   )}
@@ -1091,11 +1092,11 @@ export default function Home() {
 
       {/* Modal Popup Verifikasi + Mandatory Unggah Foto TTD Dokter Hewan */}
       {proofModal.open && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl border">
-            <div className="flex justify-between items-center border-b pb-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div className="flex justify-between items-center border-b pb-3">
               <h3 className="font-bold text-slate-800 text-sm">
-                🩺 Verifikasi Dokter Hewan ({proofModal.type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'})
+                🩺 Verifikasi ({proofModal.type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'})
               </h3>
               <button
                 onClick={() => setProofModal({ open: false, petId: null, type: null })}
@@ -1107,40 +1108,40 @@ export default function Home() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Nama Dokter Hewan Pemeriksa <span className="text-rose-500">*</span>:
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: drh. Ahmad Fauzi / drh. Nur Rohman Najib"
+                  placeholder="Contoh: drh. Nur Rohman Najib"
                   value={vetName}
                   onChange={(e) => setVetName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Unggah Foto Tanda Tangan / Stiker Cap Vet <span className="text-rose-500">*</span>:
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Unggah Foto Stiker / Cap / TTD <span className="text-rose-500">*</span>:
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setProofFile(e.target.files[0])}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
                   required
                 />
-                <p className="text-[10px] text-amber-600 mt-1">
-                  *Wajib mengunggah foto stiker botol vaksin, stempel klinik, atau foto tanda tangan Dokter Hewan sebagai syarat keabsahan.
+                <p className="text-[10px] text-amber-600 mt-1.5 leading-relaxed">
+                  *Wajib mengunggah foto stiker botol vaksin, stempel klinik, atau tanda tangan Dokter Hewan sebagai bukti validasi.
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t">
+            <div className="flex justify-end gap-2 pt-3 border-t">
               <button
                 onClick={() => setProofModal({ open: false, petId: null, type: null })}
-                className="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg font-medium"
+                className="px-4 py-2 text-xs bg-slate-100 text-slate-600 rounded-xl font-semibold"
                 disabled={submittingProof}
               >
                 Batal
@@ -1148,13 +1149,13 @@ export default function Home() {
               <button
                 onClick={handleConfirmMarkDone}
                 disabled={submittingProof || !proofFile || !vetName.trim()}
-                className={`px-4 py-1.5 text-xs font-semibold rounded-lg shadow-sm transition-all ${
+                className={`px-4 py-2 text-xs font-bold rounded-xl shadow-sm transition-all ${
                   !proofFile || !vetName.trim()
-                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
                 }`}
               >
-                {submittingProof ? 'Memproses...' : '✅ Simpan & Verifikasi'}
+                {submittingProof ? 'Menyimpan...' : '✅ Simpan & Verifikasi'}
               </button>
             </div>
           </div>
@@ -1163,8 +1164,8 @@ export default function Home() {
 
       {/* Modal Popup Panduan Program Vaksinasi & Aturan Klinik */}
       {showGuideModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border my-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border my-8">
             <div className="flex justify-between items-center border-b pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🩺</span>
@@ -1179,7 +1180,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1">
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl">
                 <p className="font-bold text-amber-900 mb-1">⚠️ Syarat Penting Sebelum Vaksinasi:</p>
                 <ul className="list-disc list-inside space-y-1 text-amber-800">
                   <li>Anabul dalam kondisi sehat (tidak demam, batuk, pilek, atau diare).</li>
@@ -1193,7 +1194,7 @@ export default function Home() {
                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                   🐱 Program Vaksinasi Kucing
                 </h4>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
                   <div>
                     <p className="font-semibold text-blue-700">1. Vaksin Dosis Pertama - Minimal Usia 8–10 Minggu</p>
                     <p className="text-slate-600">Melindungi dari Panleukopenia, Calicivirus, dan Rhinotracheitis (Feline Herpesvirus).</p>
@@ -1217,7 +1218,7 @@ export default function Home() {
                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                   🐶 Program Vaksinasi Anjing
                 </h4>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
                   <div>
                     <p className="font-semibold text-blue-700">1. Parvo / DHPPI (Vanguard / Eurican) - Minimal Usia 6–8 Minggu</p>
                     <p className="text-slate-600">Melindungi dari Distemper, Hepatitis, Parvovirus, dan Parainfluenza.</p>
@@ -1233,7 +1234,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <div className="p-3.5 bg-indigo-50 border border-indigo-200/80 rounded-2xl">
                 <p className="font-bold text-indigo-900 mb-1">⚙️ Aturan Perhitungan Sistem:</p>
                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
                   <li><b>Kitten (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
@@ -1246,7 +1247,7 @@ export default function Home() {
             <div className="pt-3 border-t flex justify-end">
               <button
                 onClick={() => setShowGuideModal(false)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20"
               >
                 Paham &amp; Tutup
               </button>
