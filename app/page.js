@@ -445,7 +445,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <img 
-              src="/icon-192.png.jpg" 
+              src="/logo.png" 
               alt="Logo Paspor Anabul" 
               className="w-12 h-12 object-contain rounded-xl shadow-sm"
             />
@@ -981,7 +981,7 @@ export default function Home() {
               <div className="flex items-center justify-between border-b-2 border-amber-600 pb-4 mb-6">
                 <div className="flex items-center gap-3">
                   <img 
-                    src="/icon-192.png.jpg" 
+                    src="/logo.png" 
                     alt="Logo Paspor Anabul" 
                     className="w-14 h-14 object-contain"
                   />
