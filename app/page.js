@@ -17,6 +17,12 @@ export default function Home() {
   const [editingPet, setEditingPet] = useState(null)
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
+  
+  // State Modal Bukti
+  const [proofModal, setProofModal] = useState({ open: false, petId: null, type: null })
+  const [proofFile, setProofFile] = useState(null)
+  const [submittingProof, setSubmittingProof] = useState(false)
+
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -186,26 +192,54 @@ export default function Home() {
     }
   }
 
-  const handleMarkDone = async (petId, type) => {
+  // Buka Modal Unggah Bukti
+  const openMarkDoneModal = (petId, type) => {
+    setProofModal({ open: true, petId, type })
+    setProofFile(null)
+  }
+
+  // Simpan Status Selesai + Foto Bukti Stiker/Cap Vet
+  const handleConfirmMarkDone = async () => {
+    const { petId, type } = proofModal
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
-    if (!confirm(`Tandai ${typeText} sudah diberikan hari ini?`)) return
+    setSubmittingProof(true)
 
     try {
-      const res = await fetch('/api/pets/mark-done', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ petId, type }),
-      })
+      let proofUrl = null
+      if (proofFile) {
+        const fileExt = proofFile.name.split('.').pop()
+        const fileName = `proof-${type}-${petId}-${Date.now()}.${fileExt}`
+        const { error: uploadErr } = await supabase.storage
+          .from('pet-photos')
+          .upload(fileName, proofFile)
 
-      const result = await res.json()
-      if (result.success) {
-        alert(`Berhasil memperbarui tanggal ${typeText}!`)
+        if (!uploadErr) {
+          const { data } = supabase.storage.from('pet-photos').getPublicUrl(fileName)
+          proofUrl = data.publicUrl
+        }
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0]
+      const updateData = type === 'vaccine' 
+        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl }
+        : { deworming_date: todayStr, deworming_proof_url: proofUrl }
+
+      const { error } = await supabase
+        .from('pets')
+        .update(updateData)
+        .eq('id', petId)
+
+      if (!error) {
+        alert(`Berhasil memperbarui ${typeText}${proofUrl ? ' beserta bukti stiker/cap Vet!' : '!'}`)
+        setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
-        alert(`Gagal: ${result.error}`)
+        alert(`Gagal: ${error.message}`)
       }
     } catch (err) {
       alert('Terjadi kesalahan jaringan')
+    } finally {
+      setSubmittingProof(false)
     }
   }
 
@@ -791,6 +825,14 @@ export default function Home() {
                             Jatuh Tempo: {formatDateLocale(nextVaccine)}
                           </p>
                         </div>
+
+                        {pet.vaccine_proof_url && (
+                          <div className="mt-2">
+                            <p className="text-[10px] font-semibold text-emerald-800 mb-1">🏷️ Bukti Stiker/Cap Vet:</p>
+                            <img src={pet.vaccine_proof_url} alt="Bukti Vaksin" className="w-16 h-16 object-cover rounded-lg border border-emerald-200 shadow-sm" />
+                          </div>
+                        )}
+
                         {vaccineStatus && (
                           <div className="mt-2">
                             <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
@@ -816,6 +858,14 @@ export default function Home() {
                             Jatuh Tempo: {formatDateLocale(nextDeworming)}
                           </p>
                         </div>
+
+                        {pet.deworming_proof_url && (
+                          <div className="mt-2">
+                            <p className="text-[10px] font-semibold text-indigo-800 mb-1">🏷️ Bukti Cap/Resep Vet:</p>
+                            <img src={pet.deworming_proof_url} alt="Bukti Obat Cacing" className="w-16 h-16 object-cover rounded-lg border border-indigo-200 shadow-sm" />
+                          </div>
+                        )}
+
                         {dewormingStatus && (
                           <div className="mt-2">
                             <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
@@ -831,16 +881,16 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Tombol Mark as Done */}
+                  {/* Tombol Mark as Done dengan Bukti */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
                     <button
-                      onClick={() => handleMarkDone(pet.id, 'vaccine')}
+                      onClick={() => openMarkDoneModal(pet.id, 'vaccine')}
                       className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
                     >
                       ✅ Sudah Vaksin Hari Ini
                     </button>
                     <button
-                      onClick={() => handleMarkDone(pet.id, 'deworming')}
+                      onClick={() => openMarkDoneModal(pet.id, 'deworming')}
                       className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
                     >
                       ✅ Sudah Obat Cacing Hari Ini
@@ -859,6 +909,56 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Modal Popup Upload Bukti Stiker / Cap Vet */}
+      {proofModal.open && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl border">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h3 className="font-bold text-slate-800 text-sm">
+                📷 Unggah Bukti Stiker / Cap Vet ({proofModal.type === 'vaccine' ? 'Vaksin' : 'Obat Cacing'})
+              </h3>
+              <button
+                onClick={() => setProofModal({ open: false, petId: null, type: null })}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Unggah foto stiker botol vaksin, cap klinik, atau foto tanda tangan Dokter Hewan sebagai bukti validasi (opsional).
+            </p>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-700">Pilih Foto Bukti:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProofFile(e.target.files[0])}
+                className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                onClick={() => setProofModal({ open: false, petId: null, type: null })}
+                className="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg font-medium"
+                disabled={submittingProof}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmMarkDone}
+                disabled={submittingProof}
+                className="px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm"
+              >
+                {submittingProof ? 'Menyimpan...' : 'Simpan & Validasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
