@@ -59,7 +59,7 @@ export default function LoginPage() {
         {/* LOGO RESMI PASPOR ANABUL */}
         <div className="flex justify-center pt-2">
           <img
-            src="/Icon-192.png.jpg"
+            src="/icon-192.png.jpg"
             alt="Logo Paspor Anabul"
             className="w-24 h-24 object-contain"
           />
