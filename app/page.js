@@ -236,7 +236,6 @@ export default function Home() {
 
       const todayStr = new Date().toISOString().split('T')[0]
       
-      // Update data spesifik berdasarkan jenis tindakan
       const updateData = type === 'vaccine' 
         ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
         : { deworming_date: todayStr, deworming_proof_url: proofUrl, deworming_vet_name: vetName }
@@ -1068,16 +1067,20 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Tanda Tangan Pengesahan Legalitas Paspor */}
-              <div className="flex justify-between items-end pt-8 mt-4">
-                <div className="text-[10px] text-slate-400">
+              {/* QR Code Verifikasi Dinamis Kanan Bawah */}
+              <div className="flex justify-between items-end pt-6 mt-4 border-t border-amber-300">
+                <div className="text-[10px] text-slate-500 space-y-0.5">
                   <p>✔ Terverifikasi Otomatis oleh Sistem Paspor Anabul Digital</p>
-                  <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID')}</p>
+                  <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="font-semibold text-amber-900 mt-1">Scan QR Code untuk verifikasi keaslian rekam medis.</p>
                 </div>
-                <div className="text-center border-t border-slate-300 pt-2 w-48">
-                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">LEGALITAS PASPOR</p>
-                  <p className="text-xs font-bold text-slate-900 mt-1">Stempel &amp; Otentikasi Digital</p>
-                  <p className="text-[9px] text-slate-400">Sistem Paspor Anabul Indonesia</p>
+                <div className="text-center bg-white p-2 rounded-xl border border-amber-400 shadow-sm">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://televet.web.id/verify/${pet.id}`} 
+                    alt="QR Verifikasi Paspor" 
+                    className="w-20 h-20 mx-auto"
+                  />
+                  <p className="text-[8px] font-bold text-slate-800 mt-1 uppercase tracking-wider">Scan Verifikasi</p>
                 </div>
               </div>
 
@@ -1221,7 +1224,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="font-semibold text-blue-700">2. Vaksin Kombinasi Kompleks + Rabies - Usia 12–16 Minggu</p>
-                    <p className="text-slate-600">Mencakup perlinderung terhadap Leptospirosis dan Virus Rabies.</p>
+                    <p className="text-slate-600">Mencakup perlindungan terhadap Leptospirosis dan Virus Rabies.</p>
                   </div>
                   <div>
                     <p className="font-semibold text-emerald-700">3. Booster Tahunan (Anjing Dewasa &gt; 6 Bln)</p>
