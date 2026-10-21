@@ -259,11 +259,11 @@ export default function Home() {
       const todayStr = new Date().toISOString().split('T')[0]
       const targetPet = pets.find(p => p.id === petId)
       const isYoung = targetPet?.age && targetPet.age <= 6
-      const itemName = type === 'vaccine' ? (targetPet?.vaccine_type || 'Vaksin Standar') : 'Obat Cacing Rutin'
+      const itemName = type === 'vaccine' ? (targetPet?.vaccine_type || 'Vaksin Standar') : 'Deworming Routine'
       const nextDateObj = calculateNextDate(todayStr, isYoung, type)
       const nextDateStr = nextDateObj ? nextDateObj.toISOString().split('T')[0] : null
 
-      // 1. Simpan ke tabel riwayat (pet_records) agar data history tidak tertimpa
+      // 1. Simpan ke tabel riwayat (pet_records) agar terdata selamanya
       const { error: recordErr } = await supabase
         .from('pet_records')
         .insert([{
@@ -289,7 +289,7 @@ export default function Home() {
         .eq('id', petId)
 
       if (!error) {
-        alert(`Berhasil diverifikasi! Riwayat ${typeText} baru oleh ${vetName} telah ditambahkan ke paspor.`)
+        alert(`Berhasil diverifikasi! Riwayat ${typeText} baru oleh ${vetName} telah ditambahkan.`)
         setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
@@ -386,7 +386,7 @@ export default function Home() {
       if (error) {
         alert('Gagal menyimpan data: ' + error.message)
       } else {
-        // Jika saat tambah baru langsung mengisi tanggal vaksin/obat cacing, masukkan juga ke pet_records
+        // Jika saat pendaftaran baru diisi tanggal vaksin / obat cacing, masukkan otomatis ke pet_records
         if (insertedData && insertedData.length > 0) {
           const newPetId = insertedData[0].id
           const isYoung = form.age && parseInt(form.age) <= 6
@@ -400,7 +400,7 @@ export default function Home() {
               record_date: form.last_vaccine,
               next_due_date: nextVax ? nextVax.toISOString().split('T')[0] : null,
               vet_name: 'Pemeriksaan Awal',
-              proof_url: form.photo_url || null
+              proof_url: null
             }])
           }
 
@@ -409,7 +409,7 @@ export default function Home() {
             await supabase.from('pet_records').insert([{
               pet_id: newPetId,
               record_type: 'deworming',
-              item_name: 'Obat Cacing Rutin',
+              item_name: 'Deworming Routine',
               record_date: form.deworming_date,
               next_due_date: nextDeworm ? nextDeworm.toISOString().split('T')[0] : null,
               vet_name: 'Pemeriksaan Awal',
@@ -488,6 +488,45 @@ export default function Home() {
     (pet.breed && pet.breed.toLowerCase().includes(search.toLowerCase())) ||
     (pet.medical_history && pet.medical_history.toLowerCase().includes(search.toLowerCase()))
   )
+
+  // Fungsi khusus untuk menggabungkan data awal pet dengan pet_records (History Gabungan)
+  const getCombinedRecords = (pet) => {
+    const isYoung = pet.age && pet.age <= 6
+    const recordsFromTable = petRecords[pet.id] || []
+
+    // Jika sudah ada data di pet_records, gunakan pet_records
+    if (recordsFromTable.length > 0) {
+      return recordsFromTable
+    }
+
+    // Jika pet_records masih kosong, buat baris fallback otomatis dari data tabel pets
+    const fallbackList = []
+    if (pet.last_vaccine) {
+      const nextVax = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
+      fallbackList.push({
+        record_type: 'vaccine',
+        item_name: pet.vaccine_type || 'Vaksin Standar',
+        record_date: pet.last_vaccine,
+        next_due_date: nextVax ? nextVax.toISOString().split('T')[0] : null,
+        vet_name: pet.vaccine_vet_name || '-',
+        proof_url: pet.vaccine_proof_url || null
+      })
+    }
+
+    if (pet.deworming_date) {
+      const nextDeworm = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
+      fallbackList.push({
+        record_type: 'deworming',
+        item_name: 'Deworming Routine',
+        record_date: pet.deworming_date,
+        next_due_date: nextDeworm ? nextDeworm.toISOString().split('T')[0] : null,
+        vet_name: pet.deworming_vet_name || '-',
+        proof_url: pet.deworming_proof_url || null
+      })
+    }
+
+    return fallbackList
+  }
 
   if (!user) {
     return (
@@ -875,7 +914,7 @@ export default function Home() {
               
               const vaccineStatus = getDueStatus(nextVaccine)
               const dewormingStatus = getDueStatus(nextDeworming)
-              const records = petRecords[pet.id] || []
+              const records = getCombinedRecords(pet)
 
               return (
                 <div
@@ -1016,7 +1055,7 @@ export default function Home() {
 
                   {/* Ringkasan Jumlah Riwayat History */}
                   <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex justify-between items-center">
-                    <span>Total Riwayat Tercatat: <b>{records.length} Tindakan Medis</b></span>
+                    <span>Total Riwayat Tercatat: <b>{records.length} Baris Riwayat</b></span>
                     <span className="text-blue-600 font-semibold">Tampil Lengkap Saat Dicetak 🖨️</span>
                   </div>
 
@@ -1026,13 +1065,13 @@ export default function Home() {
                       onClick={() => openMarkDoneModal(pet.id, 'vaccine')}
                       className="py-2 px-3 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200/60 transition-all flex items-center justify-center gap-1.5"
                     >
-                      <span>✅</span> Verifikasi Vaksin
+                      <span>✅</span> Verifikasi Vaksin Baru
                     </button>
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'deworming')}
                       className="py-2 px-3 text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded-xl border border-indigo-200/60 transition-all flex items-center justify-center gap-1.5"
                     >
-                      <span>✅</span> Verifikasi Cacing
+                      <span>✅</span> Verifikasi Cacing Baru
                     </button>
                   </div>
 
@@ -1050,11 +1089,11 @@ export default function Home() {
       </div>
 
       {/* ======================================================== */}
-      {/* TAMPILAN BUKU PASPOR FISIK (DENGAN SELURUH RIWAYAT HISTORY) */}
+      {/* TAMPILAN BUKU PASPOR FISIK (DENGAN SELURUH BARIS RIWAYAT) */}
       {/* ======================================================== */}
       <div className="hidden print:block passport-book-container">
         {filteredPets.map((pet) => {
-          const records = petRecords[pet.id] || []
+          const records = getCombinedRecords(pet)
 
           return (
             <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl my-6 text-slate-800 shadow-xl relative overflow-hidden">
@@ -1108,7 +1147,7 @@ export default function Home() {
               {/* Tabel Lembar Validasi Seluruh Riwayat History */}
               <div className="space-y-3 mb-6">
                 <h3 className="font-extrabold text-xs text-amber-900 border-b border-amber-300 pb-1.5 flex items-center gap-1.5">
-                  <span>📋</span> LEMBAR VALIDASI SELURUH RIWAYAT VAKSINASI &amp; OBAT CACING
+                  <span>📋</span> LEMBAR VALIDASI SELURUH RIWAYAT VAKSINASI &amp; MEDICINE RECORD
                 </h3>
 
                 {records.length === 0 ? (
@@ -1139,13 +1178,13 @@ export default function Home() {
                             {rec.next_due_date ? formatDateLocale(new Date(rec.next_due_date)) : '-'}
                           </td>
                           <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
-                            {rec.vet_name}
+                            {rec.vet_name || '-'}
                           </td>
                           <td className="p-2.5 text-center">
                             {rec.proof_url ? (
                               <img src={rec.proof_url} alt="Bukti Medis" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
                             ) : (
-                              <span className="text-[9px] text-slate-400 italic">-</span>
+                              <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                             )}
                           </td>
                         </tr>
