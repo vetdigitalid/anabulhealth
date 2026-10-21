@@ -375,9 +375,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
             {isVip && (
               <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-200">
@@ -385,9 +385,9 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500">{user.email}</p>
+          <p className="text-xs text-slate-500 break-all">{user.email}</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-1.5 items-center flex-wrap w-full sm:w-auto justify-end">
           {!isVip && (
             <button
               onClick={handleUpgradeVip}
@@ -407,7 +407,7 @@ export default function Home() {
             onClick={handleLogout}
             className="text-xs px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 font-medium transition-all"
           >
-            Keluar
+            🚪 Keluar
           </button>
         </div>
       </div>
