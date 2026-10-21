@@ -7,16 +7,19 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
+  const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''
+
   return (
     <html lang="id">
       <body className="bg-slate-100 text-slate-800 antialiased">
         {children}
-        {/* Script Midtrans Production Aman */}
-        <Script
-          src="https://app.midtrans.com/snap/snap.js"
-          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
-          strategy="lazyOnload"
-        />
+        {clientKey && (
+          <Script
+            src="https://app.midtrans.com/snap/snap.js"
+            data-client-key={clientKey}
+            strategy="lazyOnload"
+          />
+        )}
       </body>
     </html>
   )
