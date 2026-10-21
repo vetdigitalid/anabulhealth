@@ -21,20 +21,20 @@ export default function Login() {
       const client = createClient(url, key)
       setSupabase(client)
 
-      client.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
+      client.auth.getSession().then(({ data }) => {
+        if (data?.session) {
           router.push('/')
         }
       }).catch(() => {})
     } else {
-      setMessage('⚠️ Perhatian: Environment Variable Supabase belum diatur di Vercel Settings.')
+      setMessage('⚠️ Configuration Note: Supabase Environment Variables not initialized in Vercel Settings.')
     }
   }, [router])
 
   const handleAuth = async (e) => {
     e.preventDefault()
     if (!supabase) {
-      alert('Koneksi Supabase belum siap. Pastikan NEXT_PUBLIC_SUPABASE_URL & ANON_KEY sudah terpasang di Vercel.')
+      alert('Supabase client belum siap. Mohon cek environment variables di Vercel.')
       return
     }
 
