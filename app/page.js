@@ -411,6 +411,24 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
+      {/* CSS Khusus Pengaturan Cetak Buku Paspor Premium */}
+      <style jsx global>{`
+        @media print {
+          body {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          .passport-book-container {
+            display: block !important;
+            page-break-after: always;
+          }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
@@ -435,10 +453,10 @@ export default function Home() {
           )}
           <button
             onClick={handlePrint}
-            className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition-all"
+            className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-bold transition-all border border-blue-200 shadow-sm"
             title="Cetak Paspor Anabul"
           >
-            🖨️ Cetak
+            🖨️ Cetak Buku Paspor
           </button>
           <button
             onClick={handleLogout}
@@ -728,9 +746,9 @@ export default function Home() {
         </form>
       </div>
 
-      {/* Daftar Rekam Medis */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center print:hidden">
+      {/* Daftar Rekam Medis (Tampilan Layar HP/Web) */}
+      <div className="space-y-4 print:hidden">
+        <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold text-slate-800">
             📋 Paspor Anabul Saya ({filteredPets.length} {isVip ? '/ Unlimited VIP' : '/ 1 Kuota Gratis'})
           </h2>
@@ -741,7 +759,7 @@ export default function Home() {
           placeholder="🔍 Cari nama, ras, atau riwayat medis..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm print:hidden"
+          className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm bg-white shadow-sm"
         />
 
         {loading ? (
@@ -787,7 +805,7 @@ export default function Home() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 print:hidden">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEdit(pet)}
                         className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
@@ -897,7 +915,7 @@ export default function Home() {
                   </div>
 
                   {/* Tombol Mark as Done dengan Bukti */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                     <button
                       onClick={() => openMarkDoneModal(pet.id, 'vaccine')}
                       className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
@@ -923,6 +941,122 @@ export default function Home() {
             })}
           </div>
         )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* KHUSUS TAMPILAN BUKU PASPOR FISIK MEWAH SAAT DICETAK / PDF */}
+      {/* ======================================================== */}
+      <div className="hidden print:block passport-book-container">
+        {filteredPets.map((pet) => {
+          const isYoung = pet.age && pet.age <= 6
+          const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
+          const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
+
+          return (
+            <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-600 bg-amber-50/20 rounded-3xl my-4 text-slate-800 relative">
+              
+              {/* Cover Paspor Header */}
+              <div className="text-center border-b-2 border-amber-600 pb-4 mb-6">
+                <div className="text-3xl mb-1">🐾</div>
+                <h1 className="text-2xl font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
+                <p className="text-xs font-bold text-amber-800 tracking-wider">OFFICIAL PET MEDICAL PASSPORT & VACCINATION RECORD</p>
+                <p className="text-[10px] text-slate-500 mt-1">NO. REGISTRASI: PASPOR-ANABUL-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
+              </div>
+
+              {/* Data Identitas Anabul & Foto */}
+              <div className="flex gap-6 items-center bg-white p-4 rounded-2xl border border-amber-200 shadow-sm mb-6">
+                {pet.photo_url ? (
+                  <img src={pet.photo_url} alt={pet.name} className="w-28 h-28 rounded-2xl object-cover border-2 border-amber-500 shadow-md" />
+                ) : (
+                  <div className="w-28 h-28 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl border-2 border-amber-300">
+                    {pet.species === 'Kucing' ? '🐱' : '🐶'}
+                  </div>
+                )}
+                <div className="space-y-1 text-xs flex-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <p><b>Nama Anabul:</b> <span className="text-sm font-bold text-slate-900">{pet.name}</span></p>
+                    <p><b>Jenis Hewan:</b> {pet.species}</p>
+                    <p><b>Ras / Breed:</b> {pet.breed || '-'}</p>
+                    <p><b>Umur:</b> {pet.age ? `${pet.age} Bulan` : '-'}</p>
+                    <p><b>Berat Badan:</b> {pet.weight ? `${pet.weight} kg` : '-'}</p>
+                    <p><b>WhatsApp Pemilik:</b> +{pet.phone_number}</p>
+                  </div>
+                  <div className="pt-2 border-t mt-2">
+                    <p className="text-[10px] text-slate-500">Pemilik Akun Terdaftar: {user.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing */}
+              <div className="space-y-4">
+                <h3 className="font-bold text-sm text-slate-800 border-b border-amber-400 pb-1">
+                  📋 LEMBAR VALIDASI VAKSINASI & MEDICINE RECORD
+                </h3>
+
+                <table className="w-full text-left border-collapse text-xs bg-white rounded-xl overflow-hidden border border-slate-200">
+                  <thead>
+                    <tr className="bg-amber-600 text-white text-[11px]">
+                      <th className="p-2 border">Kategori Penanganan</th>
+                      <th className="p-2 border">Jenis Vaksin / Obat</th>
+                      <th className="p-2 border">Tanggal Berikan</th>
+                      <th className="p-2 border">Jatuh Tempo Berikutnya</th>
+                      <th className="p-2 border text-center">Bukti / Stiker / Cap Vet</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="p-2 border font-semibold">💉 Vaksinasi</td>
+                      <td className="p-2 border">{pet.vaccine_type || 'Vaksin Standar'}</td>
+                      <td className="p-2 border">{pet.last_vaccine || '-'}</td>
+                      <td className="p-2 border font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
+                      <td className="p-2 border text-center">
+                        {pet.vaccine_proof_url ? (
+                          <img src={pet.vaccine_proof_url} alt="Stiker Vaksin" className="w-12 h-12 object-cover rounded mx-auto border" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">[ Cap / Stiker Vet ]</span>
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border font-semibold">💊 Obat Cacing</td>
+                      <td className="p-2 border">Deworming Routine</td>
+                      <td className="p-2 border">{pet.deworming_date || '-'}</td>
+                      <td className="p-2 border font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
+                      <td className="p-2 border text-center">
+                        {pet.deworming_proof_url ? (
+                          <img src={pet.deworming_proof_url} alt="Cap Obat Cacing" className="w-12 h-12 object-cover rounded mx-auto border" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">[ Cap / Stiker Vet ]</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {pet.medical_history && (
+                  <div className="p-3 bg-white rounded-xl border text-xs">
+                    <p className="font-bold text-slate-700 mb-1">Catatan Diagnosa / Pesan Dokter Hewan:</p>
+                    <p className="text-slate-600 italic">{pet.medical_history}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Tanda Tangan Dokter Hewan & Verifikasi */}
+              <div className="flex justify-between items-end pt-8 mt-4">
+                <div className="text-[10px] text-slate-400">
+                  <p>✔ Terverifikasi Otomatis oleh Sistem Paspor Anabul Digital</p>
+                  <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID')}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-slate-700 mb-10">Dokter Hewan Pemeriksa,</p>
+                  <p className="text-xs font-bold text-slate-900 underline">drh. Nur Rohman Najib</p>
+                  <p className="text-[10px] text-slate-500">SIP / STRV Active Member PDHI Jatim II</p>
+                </div>
+              </div>
+
+            </div>
+          )
+        })}
       </div>
 
       {/* Modal Popup Upload Bukti Stiker / Cap Vet */}
@@ -1011,15 +1145,15 @@ export default function Home() {
                 </h4>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                   <div>
-                    <p className="font-semibold text-blue-700">1. Vaksin Dosis Pertama - Minimal Usia 8–10 Minggu</p>
+                    <p className="font-semibold text-blue-700">1. Tricat (F3) - Minimal Usia 8–10 Minggu</p>
                     <p className="text-slate-600">Melindungi dari Panleukopenia, Calicivirus, dan Rhinotracheitis (Feline Herpesvirus).</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-blue-700">2. Vaksin Dosis kedua - Seri Lanjutan (Usia 12–14 Minggu)</p>
+                    <p className="font-semibold text-blue-700">2. Tetracat (F4) - Seri Lanjutan (Usia 12–14 Minggu)</p>
                     <p className="text-slate-600">Melindungi dari 3 penyakit F3 ditambah serangan bakteri Chlamydia.</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-blue-700">3. Vaksin Dosis ke tiga ditambah Rabies - Minimal Usia 12–16 Minggu</p>
+                    <p className="font-semibold text-blue-700">3. Vaksin Rabies - Minimal Usia 12–16 Minggu</p>
                     <p className="text-slate-600">Wajib untuk pencegahan penyakit Rabies zoonosis.</p>
                   </div>
                   <div>
@@ -1054,9 +1188,9 @@ export default function Home() {
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <p className="font-bold text-indigo-900 mb-1">⚙️ Aturan Perhitungan Sistem:</p>
                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
-                  <li><b>Kitten (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
+                  <li><b>Anak (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
                   <li><b>Dewasa (&gt; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 tahun sekali</b> (Booster Tahunan).</li>
-                  <li><b>Obat Cacing:</b> Kitten 1 bulan sekali, Dewasa 3 bulan sekali.</li>
+                  <li><b>Obat Cacing:</b> Anak 1 bulan sekali, Dewasa 3 bulan sekali.</li>
                 </ul>
               </div>
             </div>
