@@ -23,6 +23,9 @@ export default function Home() {
   const [proofFile, setProofFile] = useState(null)
   const [submittingProof, setSubmittingProof] = useState(false)
 
+  // State Modal Panduan Vaksinasi
+  const [showGuideModal, setShowGuideModal] = useState(false)
+
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -446,12 +449,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Banner Himbauan Pengingat WA */}
-      <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2 print:hidden">
-        <span className="text-base">📲</span>
-        <p>
-          <b>Notifikasi Pengingat Ganda:</b> Masukkan nomor WhatsApp yang aktif agar Anda menerima jadwal vaksinasi & obat cacing via <b>Email</b> dan <b>WhatsApp</b>!
-        </p>
+      {/* Banner Himbauan Pengingat WA & Tombol Panduan Vaksin */}
+      <div className="mb-6 space-y-2 print:hidden">
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📲</span>
+            <p>
+              <b>Notifikasi Pengingat Ganda:</b> Masukkan nomor WhatsApp yang aktif agar Anda menerima jadwal via <b>Email</b> &amp; <b>WhatsApp</b>!
+            </p>
+          </div>
+        </div>
+
+        {/* Tombol Panduan Program Vaksinasi */}
+        <button
+          onClick={() => setShowGuideModal(true)}
+          className="w-full py-2 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all"
+        >
+          <span>📖 Program Vaksinasi Anabul (Panduan &amp; Aturan)</span>
+        </button>
       </div>
 
       {/* Form Tambah / Edit Anabul */}
@@ -953,7 +968,105 @@ export default function Home() {
                 disabled={submittingProof}
                 className="px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm"
               >
-                {submittingProof ? 'Menyimpan...' : 'Simpan & Validasi'}
+                {submittingProof ? 'Menyimpan...' : 'Simpan &amp; Validasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Popup Panduan Program Vaksinasi & Aturan Klinik */}
+      {showGuideModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border my-8">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🩺</span>
+                <h3 className="font-bold text-slate-800 text-base">Panduan Program Vaksinasi Anabul</h3>
+              </div>
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1">
+              {/* Syarat Umum */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="font-bold text-amber-900 mb-1">⚠️ Syarat Penting Sebelum Vaksinasi:</p>
+                <ul className="list-disc list-inside space-y-1 text-amber-800">
+                  <li>Anabul dalam kondisi sehat (tidak demam, batuk, pilek, atau diare).</li>
+                  <li>Nafsu makan &amp; minum baik serta aktif bergerak.</li>
+                  <li>Sudah diberikan obat cacing minimal 1–2 minggu sebelum vaksin.</li>
+                  <li>Bebas dari parasit berat (kutu/jamur berat).</li>
+                </ul>
+              </div>
+
+              {/* Panduan Kucing */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                  🐱 Program Vaksinasi Kucing
+                </h4>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div>
+                    <p className="font-semibold text-blue-700">1. Tricat (F3) - Minimal Usia 8–10 Minggu</p>
+                    <p className="text-slate-600">Melindungi dari Panleukopenia, Calicivirus, dan Rhinotracheitis (Feline Herpesvirus).</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-700">2. Tetracat (F4) - Seri Lanjutan (Usia 12–14 Minggu)</p>
+                    <p className="text-slate-600">Melindungi dari 3 penyakit F3 ditambah serangan bakteri Chlamydia.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-700">3. Vaksin Rabies - Minimal Usia 12–16 Minggu</p>
+                    <p className="text-slate-600">Wajib untuk pencegahan penyakit Rabies zoonosis.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-emerald-700">4. Booster Tahunan (Kucing Dewasa &gt; 6 Bln)</p>
+                    <p className="text-slate-600">Vaksinasi ulangan dilakukan <b>1 tahun sekali</b> untuk menjaga daya tahan tubuh tetap optimal.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Panduan Anjing */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                  🐶 Program Vaksinasi Anjing
+                </h4>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div>
+                    <p className="font-semibold text-blue-700">1. Parvo / DHPPI (Vanguard / Eurican) - Minimal Usia 6–8 Minggu</p>
+                    <p className="text-slate-600">Melindungi dari Distemper, Hepatitis, Parvovirus, dan Parainfluenza.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-700">2. Vaksin Kombinasi Kompleks + Rabies - Usia 12–16 Minggu</p>
+                    <p className="text-slate-600">Mencakup perlindungan terhadap Leptospirosis dan Virus Rabies.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-emerald-700">3. Booster Tahunan (Anjing Dewasa &gt; 6 Bln)</p>
+                    <p className="text-slate-600">Vaksinasi ulangan booster kombinasi dilakukan <b>1 tahun sekali</b>.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Aturan Sistem Paspor Anabul */}
+              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+                <p className="font-bold text-indigo-900 mb-1">⚙️ Aturan Perhitungan Sistem:</p>
+                <ul className="list-disc list-inside space-y-1 text-indigo-800">
+                  <li><b>Anak (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
+                  <li><b>Dewasa (&gt; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 tahun sekali</b> (Booster Tahunan).</li>
+                  <li><b>Obat Cacing:</b> Anak 1 bulan sekali, Dewasa 3 bulan sekali.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t flex justify-end">
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm"
+              >
+                Paham &amp; Tutup
               </button>
             </div>
           </div>
