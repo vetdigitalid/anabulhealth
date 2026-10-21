@@ -1,21 +1,23 @@
 {
   "name": "Paspor Anabul",
   "short_name": "PasporAnabul",
-  "description": "Aplikasi Rekam Medis & Paspor Kesehatan Hewan Kesayangan",
+  "description": "Rekam Medis & Pengingat Kesehatan Hewan",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#d97706",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
