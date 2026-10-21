@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,8 +14,11 @@ export default function Login() {
   const router = useRouter()
 
   useEffect(() => {
-    if (supabaseUrl && supabaseAnonKey) {
-      const client = createClient(supabaseUrl, supabaseAnonKey)
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (url && key) {
+      const client = createClient(url, key)
       setSupabase(client)
 
       client.auth.getSession().then(({ data: { session } }) => {
@@ -26,13 +26,15 @@ export default function Login() {
           router.push('/')
         }
       })
+    } else {
+      setMessage('⚠️ Perhatian: Environment Variable Supabase belum diatur di Vercel.')
     }
   }, [router])
 
   const handleAuth = async (e) => {
     e.preventDefault()
     if (!supabase) {
-      setMessage('Gagal: Konfigurasi Supabase belum siap. Periksa Environment Variables di Vercel.')
+      alert('Koneksi Supabase belum siap. Pastikan NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY sudah dipasang di Vercel Settings.')
       return
     }
 
@@ -41,17 +43,11 @@ export default function Login() {
 
     try {
       if (isRegister) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        })
+        const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi atau langsung masuk.')
+        setMessage('Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.')
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         router.push('/')
       }
@@ -78,7 +74,7 @@ export default function Login() {
         </div>
 
         {message && (
-          <div className={`p-3 rounded-xl text-xs ${message.startsWith('Gagal') ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+          <div className={`p-3 rounded-xl text-xs ${message.startsWith('Gagal') ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
             {message}
           </div>
         )}
