@@ -203,7 +203,7 @@ export default function Home() {
     setVetName('')
   }
 
-  // Simpan Status Selesai + Foto Bukti TTD & Nama Dokter Hewan
+  // Simpan Status Selesai + Foto Bukti TTD & Nama Dokter Hewan Per Tindakan
   const handleConfirmMarkDone = async () => {
     const { petId, type } = proofModal
     const typeText = type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'
@@ -235,9 +235,11 @@ export default function Home() {
       proofUrl = data.publicUrl
 
       const todayStr = new Date().toISOString().split('T')[0]
+      
+      // Update data spesifik berdasarkan jenis tindakan
       const updateData = type === 'vaccine' 
-        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vet_signature_url: vetName }
-        : { deworming_date: todayStr, deworming_proof_url: proofUrl, vet_signature_url: vetName }
+        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
+        : { deworming_date: todayStr, deworming_proof_url: proofUrl, deworming_vet_name: vetName }
 
       const { error } = await supabase
         .from('pets')
@@ -869,8 +871,8 @@ export default function Home() {
                           <p className="text-emerald-700 font-bold mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextVaccine)}
                           </p>
-                          {pet.vet_signature_url && (
-                            <p className="text-[10px] text-slate-500 mt-1">🩺 Pemeriksa: <b>{pet.vet_signature_url}</b></p>
+                          {pet.vaccine_vet_name && (
+                            <p className="text-[10px] text-emerald-900 font-medium mt-1">🩺 Pemeriksa: <b>{pet.vaccine_vet_name}</b></p>
                           )}
                         </div>
 
@@ -905,8 +907,8 @@ export default function Home() {
                           <p className="text-indigo-700 font-bold mt-0.5">
                             Jatuh Tempo: {formatDateLocale(nextDeworming)}
                           </p>
-                          {pet.vet_signature_url && (
-                            <p className="text-[10px] text-slate-500 mt-1">🩺 Pemeriksa: <b>{pet.vet_signature_url}</b></p>
+                          {pet.deworming_vet_name && (
+                            <p className="text-[10px] text-indigo-900 font-medium mt-1">🩺 Pemeriksa: <b>{pet.deworming_vet_name}</b></p>
                           )}
                         </div>
 
@@ -1005,7 +1007,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing */}
+              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing DENGAN KOLOM DOKTER HEWAN */}
               <div className="space-y-4">
                 <h3 className="font-bold text-sm text-slate-800 border-b border-amber-400 pb-1">
                   📋 LEMBAR VALIDASI VAKSINASI & MEDICINE RECORD
@@ -1013,12 +1015,13 @@ export default function Home() {
 
                 <table className="w-full text-left border-collapse text-xs bg-white rounded-xl overflow-hidden border border-slate-200">
                   <thead>
-                    <tr className="bg-amber-600 text-white text-[11px]">
+                    <tr className="bg-amber-600 text-white text-[10px]">
                       <th className="p-2 border">Penanganan</th>
                       <th className="p-2 border">Jenis Vaksin / Obat</th>
-                      <th className="p-2 border">Tanggal Berikan</th>
+                      <th className="p-2 border">Tanggal</th>
                       <th className="p-2 border">Jatuh Tempo</th>
-                      <th className="p-2 border text-center">Stiker / Cap / TTD Vet</th>
+                      <th className="p-2 border">Dokter Hewan</th>
+                      <th className="p-2 border text-center">Stiker / Cap / TTD</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1027,14 +1030,14 @@ export default function Home() {
                       <td className="p-2 border">{pet.vaccine_type || 'Vaksin Standar'}</td>
                       <td className="p-2 border">{pet.last_vaccine || '-'}</td>
                       <td className="p-2 border font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
+                      <td className="p-2 border font-bold text-slate-800">
+                        {pet.vaccine_vet_name || '-'}
+                      </td>
                       <td className="p-2 border text-center">
                         {pet.vaccine_proof_url ? (
-                          <div className="space-y-1">
-                            <img src={pet.vaccine_proof_url} alt="Stiker/TTD Vaksin" className="w-12 h-12 object-cover rounded mx-auto border" />
-                            {pet.vet_signature_url && <p className="text-[8px] font-bold text-slate-700">{pet.vet_signature_url}</p>}
-                          </div>
+                          <img src={pet.vaccine_proof_url} alt="Stiker/TTD Vaksin" className="w-10 h-10 object-cover rounded mx-auto border" />
                         ) : (
-                          <span className="text-[10px] text-slate-400 italic">[ Belum Ada TTD ]</span>
+                          <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
                       </td>
                     </tr>
@@ -1043,14 +1046,14 @@ export default function Home() {
                       <td className="p-2 border">Deworming Routine</td>
                       <td className="p-2 border">{pet.deworming_date || '-'}</td>
                       <td className="p-2 border font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
+                      <td className="p-2 border font-bold text-slate-800">
+                        {pet.deworming_vet_name || '-'}
+                      </td>
                       <td className="p-2 border text-center">
                         {pet.deworming_proof_url ? (
-                          <div className="space-y-1">
-                            <img src={pet.deworming_proof_url} alt="Cap/TTD Obat Cacing" className="w-12 h-12 object-cover rounded mx-auto border" />
-                            {pet.vet_signature_url && <p className="text-[8px] font-bold text-slate-700">{pet.vet_signature_url}</p>}
-                          </div>
+                          <img src={pet.deworming_proof_url} alt="Cap/TTD Obat Cacing" className="w-10 h-10 object-cover rounded mx-auto border" />
                         ) : (
-                          <span className="text-[10px] text-slate-400 italic">[ Belum Ada TTD ]</span>
+                          <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
                       </td>
                     </tr>
@@ -1065,16 +1068,16 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Tanda Tangan Dokter Hewan & Verifikasi */}
+              {/* Tanda Tangan Pengesahan Legalitas Paspor */}
               <div className="flex justify-between items-end pt-8 mt-4">
                 <div className="text-[10px] text-slate-400">
                   <p>✔ Terverifikasi Otomatis oleh Sistem Paspor Anabul Digital</p>
                   <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID')}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs font-semibold text-slate-700 mb-1">Dokter Hewan Pemeriksa,</p>
-                  <p className="text-xs font-bold text-slate-900 underline">{pet.vet_signature_url || 'drh. Pemeriksa'}</p>
-                  <p className="text-[10px] text-slate-500">Stempel &amp; Tanda Tangan Terlampir</p>
+                <div className="text-center border-t border-slate-300 pt-2 w-48">
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">LEGALITAS PASPOR</p>
+                  <p className="text-xs font-bold text-slate-900 mt-1">Stempel &amp; Otentikasi Digital</p>
+                  <p className="text-[9px] text-slate-400">Sistem Paspor Anabul Indonesia</p>
                 </div>
               </div>
 
@@ -1218,7 +1221,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="font-semibold text-blue-700">2. Vaksin Kombinasi Kompleks + Rabies - Usia 12–16 Minggu</p>
-                    <p className="text-slate-600">Mencakup perlindungan terhadap Leptospirosis dan Virus Rabies.</p>
+                    <p className="text-slate-600">Mencakup perlinderung terhadap Leptospirosis dan Virus Rabies.</p>
                   </div>
                   <div>
                     <p className="font-semibold text-emerald-700">3. Booster Tahunan (Anjing Dewasa &gt; 6 Bln)</p>
