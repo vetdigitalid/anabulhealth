@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -15,20 +13,29 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [supabase, setSupabase] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        router.push('/')
-      }
+    if (supabaseUrl && supabaseAnonKey) {
+      const client = createClient(supabaseUrl, supabaseAnonKey)
+      setSupabase(client)
+
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          router.push('/')
+        }
+      })
     }
-    checkSession()
   }, [router])
 
   const handleAuth = async (e) => {
     e.preventDefault()
+    if (!supabase) {
+      setMessage('Gagal: Konfigurasi Supabase belum siap. Periksa Environment Variables di Vercel.')
+      return
+    }
+
     setLoading(true)
     setMessage('')
 
@@ -39,7 +46,7 @@ export default function Login() {
           password,
         })
         if (error) throw error
-        setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi atau langsung login.')
+        setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi atau langsung masuk.')
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
