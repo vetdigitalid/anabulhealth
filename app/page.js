@@ -1068,7 +1068,7 @@ export default function Home() {
                 )}
               </div>
 
-              {/* QR Code Verifikasi Dinamis Kanan Bawah Menggunakan Domain Vercel */}
+              {/* QR Code Verifikasi Menggunakan pasporanabulku.web.id */}
               <div className="flex justify-between items-end pt-6 mt-4 border-t border-amber-300">
                 <div className="text-[10px] text-slate-500 space-y-0.5">
                   <p>✔ Terverifikasi Otomatis oleh Sistem Paspor Anabul Digital</p>
@@ -1077,7 +1077,7 @@ export default function Home() {
                 </div>
                 <div className="text-center bg-white p-2 rounded-xl border border-amber-400 shadow-sm">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://anabulhealth.vercel.app/verify/${pet.id}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://pasporanabulku.web.id/verify/${pet.id}`} 
                     alt="QR Verifikasi Paspor" 
                     className="w-20 h-20 mx-auto"
                   />
