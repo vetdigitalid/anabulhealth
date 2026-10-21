@@ -12,6 +12,7 @@ const supabase = createClient(
 export default function Home() {
   const [user, setUser] = useState(null)
   const [pets, setPets] = useState([])
+  const [petRecords, setPetRecords] = useState({}) // Menyimpan history record per pet_id
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [editingPet, setEditingPet] = useState(null)
@@ -101,8 +102,31 @@ export default function Home() {
       console.error('Error fetching pets:', error)
     } else {
       setPets(data || [])
+      if (data && data.length > 0) {
+        const petIds = data.map(p => p.id)
+        fetchPetRecords(petIds)
+      }
     }
     setLoading(false)
+  }
+
+  const fetchPetRecords = async (petIds) => {
+    const { data, error } = await supabase
+      .from('pet_records')
+      .select('*')
+      .in('pet_id', petIds)
+      .order('record_date', { ascending: true })
+
+    if (!error && data) {
+      const grouped = {}
+      data.forEach(record => {
+        if (!grouped[record.pet_id]) {
+          grouped[record.pet_id] = []
+        }
+        grouped[record.pet_id].push(record)
+      })
+      setPetRecords(grouped)
+    }
   }
 
   const handlePhotoUpload = async (e) => {
@@ -233,7 +257,28 @@ export default function Home() {
       proofUrl = data.publicUrl
 
       const todayStr = new Date().toISOString().split('T')[0]
-      
+      const targetPet = pets.find(p => p.id === petId)
+      const isYoung = targetPet?.age && targetPet.age <= 6
+      const itemName = type === 'vaccine' ? (targetPet?.vaccine_type || 'Vaksin Standar') : 'Obat Cacing Rutin'
+      const nextDateObj = calculateNextDate(todayStr, isYoung, type)
+      const nextDateStr = nextDateObj ? nextDateObj.toISOString().split('T')[0] : null
+
+      // 1. Simpan ke tabel riwayat (pet_records) agar data history tidak tertimpa
+      const { error: recordErr } = await supabase
+        .from('pet_records')
+        .insert([{
+          pet_id: petId,
+          record_type: type,
+          item_name: itemName,
+          record_date: todayStr,
+          next_due_date: nextDateStr,
+          vet_name: vetName,
+          proof_url: proofUrl
+        }])
+
+      if (recordErr) throw recordErr
+
+      // 2. Update data terbaru di tabel pets untuk pengingat utama
       const updateData = type === 'vaccine' 
         ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
         : { deworming_date: todayStr, deworming_proof_url: proofUrl, deworming_vet_name: vetName }
@@ -244,7 +289,7 @@ export default function Home() {
         .eq('id', petId)
 
       if (!error) {
-        alert(`Berhasil diverifikasi! Data ${typeText} oleh ${vetName} telah disimpan.`)
+        alert(`Berhasil diverifikasi! Riwayat ${typeText} baru oleh ${vetName} telah ditambahkan ke paspor.`)
         setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
@@ -336,11 +381,43 @@ export default function Home() {
         fetchPets(user.id)
       }
     } else {
-      const { error } = await supabase.from('pets').insert([payload])
+      const { data: insertedData, error } = await supabase.from('pets').insert([payload]).select()
 
       if (error) {
         alert('Gagal menyimpan data: ' + error.message)
       } else {
+        // Jika saat tambah baru langsung mengisi tanggal vaksin/obat cacing, masukkan juga ke pet_records
+        if (insertedData && insertedData.length > 0) {
+          const newPetId = insertedData[0].id
+          const isYoung = form.age && parseInt(form.age) <= 6
+
+          if (form.last_vaccine) {
+            const nextVax = calculateNextDate(form.last_vaccine, isYoung, 'vaccine')
+            await supabase.from('pet_records').insert([{
+              pet_id: newPetId,
+              record_type: 'vaccine',
+              item_name: form.vaccine_type || 'Vaksin Standar',
+              record_date: form.last_vaccine,
+              next_due_date: nextVax ? nextVax.toISOString().split('T')[0] : null,
+              vet_name: 'Pemeriksaan Awal',
+              proof_url: form.photo_url || null
+            }])
+          }
+
+          if (form.deworming_date) {
+            const nextDeworm = calculateNextDate(form.deworming_date, isYoung, 'deworming')
+            await supabase.from('pet_records').insert([{
+              pet_id: newPetId,
+              record_type: 'deworming',
+              item_name: 'Obat Cacing Rutin',
+              record_date: form.deworming_date,
+              next_due_date: nextDeworm ? nextDeworm.toISOString().split('T')[0] : null,
+              vet_name: 'Pemeriksaan Awal',
+              proof_url: null
+            }])
+          }
+        }
+
         alert('Data anabul berhasil disimpan!')
         resetForm()
         fetchPets(user.id)
@@ -798,6 +875,7 @@ export default function Home() {
               
               const vaccineStatus = getDueStatus(nextVaccine)
               const dewormingStatus = getDueStatus(nextDeworming)
+              const records = petRecords[pet.id] || []
 
               return (
                 <div
@@ -936,6 +1014,12 @@ export default function Home() {
                     )}
                   </div>
 
+                  {/* Ringkasan Jumlah Riwayat History */}
+                  <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex justify-between items-center">
+                    <span>Total Riwayat Tercatat: <b>{records.length} Tindakan Medis</b></span>
+                    <span className="text-blue-600 font-semibold">Tampil Lengkap Saat Dicetak 🖨️</span>
+                  </div>
+
                   {/* Tombol Aksi Verifikasi Cepat */}
                   <div className="grid grid-cols-2 gap-2 pt-2">
                     <button
@@ -966,13 +1050,11 @@ export default function Home() {
       </div>
 
       {/* ======================================================== */}
-      {/* TAMPILAN BUKU PASPOR FISIK (DENGAN LOGO RESMI) */}
+      {/* TAMPILAN BUKU PASPOR FISIK (DENGAN SELURUH RIWAYAT HISTORY) */}
       {/* ======================================================== */}
       <div className="hidden print:block passport-book-container">
         {filteredPets.map((pet) => {
-          const isYoung = pet.age && pet.age <= 6
-          const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine')
-          const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
+          const records = petRecords[pet.id] || []
 
           return (
             <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl my-6 text-slate-800 shadow-xl relative overflow-hidden">
@@ -1023,58 +1105,54 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing */}
+              {/* Tabel Lembar Validasi Seluruh Riwayat History */}
               <div className="space-y-3 mb-6">
                 <h3 className="font-extrabold text-xs text-amber-900 border-b border-amber-300 pb-1.5 flex items-center gap-1.5">
-                  <span>📋</span> LEMBAR VALIDASI VAKSINASI &amp; MEDICINE RECORD
+                  <span>📋</span> LEMBAR VALIDASI SELURUH RIWAYAT VAKSINASI &amp; OBAT CACING
                 </h3>
 
-                <table className="w-full text-left border-collapse text-xs bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-sm">
-                  <thead>
-                    <tr className="bg-amber-700 text-white text-[10px] uppercase tracking-wider">
-                      <th className="p-2.5 border-r border-amber-800">Penanganan</th>
-                      <th className="p-2.5 border-r border-amber-800">Jenis Vaksin / Obat</th>
-                      <th className="p-2.5 border-r border-amber-800">Tanggal</th>
-                      <th className="p-2.5 border-r border-amber-800">Jatuh Tempo</th>
-                      <th className="p-2.5 border-r border-amber-800">Dokter Hewan</th>
-                      <th className="p-2.5 text-center">Stiker / Cap / TTD</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-amber-100">
-                    <tr>
-                      <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">💉 Vaksinasi</td>
-                      <td className="p-2.5 border-r border-amber-100 text-slate-700">{pet.vaccine_type || 'Vaksin Standar'}</td>
-                      <td className="p-2.5 border-r border-amber-100 text-slate-600">{pet.last_vaccine || '-'}</td>
-                      <td className="p-2.5 border-r border-amber-100 font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
-                      <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
-                        {pet.vaccine_vet_name || '-'}
-                      </td>
-                      <td className="p-2.5 text-center">
-                        {pet.vaccine_proof_url ? (
-                          <img src={pet.vaccine_proof_url} alt="Stiker Vaksin" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
-                        ) : (
-                          <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">💊 Obat Cacing</td>
-                      <td className="p-2.5 border-r border-amber-100 text-slate-700">Deworming Routine</td>
-                      <td className="p-2.5 border-r border-amber-100 text-slate-600">{pet.deworming_date || '-'}</td>
-                      <td className="p-2.5 border-r border-amber-100 font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
-                      <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
-                        {pet.deworming_vet_name || '-'}
-                      </td>
-                      <td className="p-2.5 text-center">
-                        {pet.deworming_proof_url ? (
-                          <img src={pet.deworming_proof_url} alt="Cap Obat Cacing" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
-                        ) : (
-                          <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {records.length === 0 ? (
+                  <div className="p-4 bg-white rounded-2xl border border-amber-200 text-center text-xs text-slate-400 italic">
+                    Belum ada riwayat tindakan medis tercatat.
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse text-xs bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-sm">
+                    <thead>
+                      <tr className="bg-amber-700 text-white text-[10px] uppercase tracking-wider">
+                        <th className="p-2.5 border-r border-amber-800">Penanganan</th>
+                        <th className="p-2.5 border-r border-amber-800">Jenis Vaksin / Obat</th>
+                        <th className="p-2.5 border-r border-amber-800">Tanggal</th>
+                        <th className="p-2.5 border-r border-amber-800">Jatuh Tempo</th>
+                        <th className="p-2.5 border-r border-amber-800">Dokter Hewan</th>
+                        <th className="p-2.5 text-center">Stiker / Cap / TTD</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-amber-100">
+                      {records.map((rec, idx) => (
+                        <tr key={idx}>
+                          <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">
+                            {rec.record_type === 'vaccine' ? '💉 Vaksinasi' : '💊 Obat Cacing'}
+                          </td>
+                          <td className="p-2.5 border-r border-amber-100 text-slate-700">{rec.item_name}</td>
+                          <td className="p-2.5 border-r border-amber-100 text-slate-600">{rec.record_date}</td>
+                          <td className="p-2.5 border-r border-amber-100 font-bold text-emerald-700">
+                            {rec.next_due_date ? formatDateLocale(new Date(rec.next_due_date)) : '-'}
+                          </td>
+                          <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
+                            {rec.vet_name}
+                          </td>
+                          <td className="p-2.5 text-center">
+                            {rec.proof_url ? (
+                              <img src={rec.proof_url} alt="Bukti Medis" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
+                            ) : (
+                              <span className="text-[9px] text-slate-400 italic">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
 
                 {pet.medical_history && (
                   <div className="p-3 bg-white/80 rounded-xl border border-amber-200 text-xs">
