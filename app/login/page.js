@@ -54,10 +54,22 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">🐾 PASPOR ANABUL</h1>
-          <p className="text-xs text-slate-500 mt-1">
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 w-full max-w-md text-center space-y-5">
+        
+        {/* LOGO RESMI PASPOR ANABUL */}
+        <div className="flex justify-center pt-2">
+          <img
+            src="/Icon-192.png.jpg"
+            alt="Logo Paspor Anabul"
+            className="w-24 h-24 object-contain"
+          />
+        </div>
+
+        <div>
+          <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">
+            PASPOR ANABUL
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
             {isRegister
               ? 'Buat akun Paspor Anabul Anda'
               : 'Masuk ke akun Paspor Anabul Anda'}
@@ -66,7 +78,7 @@ export default function LoginPage() {
 
         {message && (
           <div
-            className={`mb-4 p-3 text-xs rounded-xl border ${
+            className={`p-3 text-xs rounded-xl border text-left ${
               message.includes('berhasil')
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                 : 'bg-rose-50 text-rose-700 border-rose-100'
@@ -76,9 +88,9 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleAuth} className="space-y-4">
+        <form onSubmit={handleAuth} className="space-y-4 text-left">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Email:
             </label>
             <input
@@ -86,13 +98,13 @@ export default function LoginPage() {
               placeholder="nama@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Password:
             </label>
             <input
@@ -100,7 +112,7 @@ export default function LoginPage() {
               placeholder="Minimal 6 karakter"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 text-sm"
+              className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
               minLength={6}
               required
             />
@@ -109,7 +121,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 font-medium text-white rounded-xl transition-all shadow-sm text-sm"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 font-bold text-white rounded-xl text-xs shadow-md shadow-blue-600/20 transition-all"
           >
             {loading
               ? 'Memproses...'
@@ -119,13 +131,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="pt-2">
           <button
             onClick={() => {
               setIsRegister(!isRegister)
               setMessage('')
             }}
-            className="text-xs text-slate-500 hover:text-blue-600 font-medium underline"
+            className="text-xs text-slate-500 hover:text-blue-600 font-medium underline transition-all"
           >
             {isRegister
               ? 'Sudah punya akun? Login di sini'
