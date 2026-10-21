@@ -1195,15 +1195,15 @@ export default function Home() {
                 </h4>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                   <div>
-                    <p className="font-semibold text-blue-700">1. Tricat (F3) - Minimal Usia 8–10 Minggu</p>
+                    <p className="font-semibold text-blue-700">1. Vaksin Dosis Pertama - Minimal Usia 8–10 Minggu</p>
                     <p className="text-slate-600">Melindungi dari Panleukopenia, Calicivirus, dan Rhinotracheitis (Feline Herpesvirus).</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-blue-700">2. Tetracat (F4) - Seri Lanjutan (Usia 12–14 Minggu)</p>
-                    <p className="text-slate-600">Melindungi dari 3 penyakit F3 ditambah serangan bakteri Chlamydia.</p>
+                    <p className="font-semibold text-blue-700">2. Vaksin Dosis Kedua - Seri Lanjutan (Usia 12–14 Minggu)</p>
+                    <p className="text-slate-600">Melindungi dari 3 penyakit awal ditambah serangan bakteri Chlamydia.</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-blue-700">3. Vaksin Rabies - Minimal Usia 12–16 Minggu</p>
+                    <p className="font-semibold text-blue-700">3. Vaksin Dosis Ketiga (ditambah Rabies) - Minimal Usia 12–16 Minggu</p>
                     <p className="text-slate-600">Wajib untuk pencegahan penyakit Rabies zoonosis.</p>
                   </div>
                   <div>
@@ -1238,7 +1238,7 @@ export default function Home() {
                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
                   <li><b>Anak (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
                   <li><b>Dewasa (&gt; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 tahun sekali</b> (Booster Tahunan).</li>
-                  <li><b>Obat Cacing:</b> Anak 1 bulan sekali, Dewasa 3 bulan sekali.</li>
+                  <li><b>Obat Cacing:</b> Kitten 1 bulan sekali, Dewasa 3 bulan sekali.</li>
                 </ul>
               </div>
             </div>
