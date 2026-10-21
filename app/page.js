@@ -964,7 +964,7 @@ export default function Home() {
       </div>
 
       {/* ======================================================== */}
-      {/* TAMPILAN BUKU PASPOR FISIK SAAT DICETAK / PDF */}
+      {/* TAMPILAN BUKU PASPOR FISIK (PREMIUM & ESTETIS) */}
       {/* ======================================================== */}
       <div className="hidden print:block passport-book-container">
         {filteredPets.map((pet) => {
@@ -973,85 +973,102 @@ export default function Home() {
           const nextDeworming = calculateNextDate(pet.deworming_date, isYoung, 'deworming')
 
           return (
-            <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-600 bg-amber-50/20 rounded-3xl my-4 text-slate-800 relative">
+            <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl my-6 text-slate-800 shadow-xl relative overflow-hidden">
               
-              {/* Cover Paspor Header */}
-              <div className="text-center border-b-2 border-amber-600 pb-4 mb-6">
-                <div className="text-3xl mb-1">🐾</div>
-                <h1 className="text-2xl font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
-                <p className="text-xs font-bold text-amber-800 tracking-wider">OFFICIAL PET MEDICAL PASSPORT & VACCINATION RECORD</p>
-                <p className="text-[10px] text-slate-500 mt-1">NO. REGISTRASI: PASPOR-ANABUL-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
+              {/* Watermark / Aksen Elegan Belakang */}
+              <div className="absolute -right-10 -bottom-10 text-9xl opacity-5 select-none pointer-events-none">
+                🐾
               </div>
 
-              {/* Data Identitas Anabul & Foto */}
-              <div className="flex gap-6 items-center bg-white p-4 rounded-2xl border border-amber-200 shadow-sm mb-6">
+              {/* Header Paspor Premium dengan Logo & Domain pasporanabulku.web.id */}
+              <div className="flex items-center justify-between border-b-2 border-amber-600 pb-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center text-2xl shadow-md">
+                    🐾
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
+                    <p className="text-[11px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL PASSPORT</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-extrabold tracking-wide">
+                    🌐 pasporanabulku.web.id
+                  </span>
+                  <p className="text-[9px] text-slate-400 mt-1">NO. REG: PAS-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
+                </div>
+              </div>
+
+              {/* Data Identitas Anabul & Foto Estetis */}
+              <div className="flex gap-6 items-center bg-white/90 backdrop-blur p-5 rounded-2xl border border-amber-200/80 shadow-sm mb-6">
                 {pet.photo_url ? (
-                  <img src={pet.photo_url} alt={pet.name} className="w-28 h-28 rounded-2xl object-cover border-2 border-amber-500 shadow-md" />
+                  <img src={pet.photo_url} alt={pet.name} className="w-28 h-28 rounded-2xl object-cover border-4 border-amber-500 shadow-md" />
                 ) : (
-                  <div className="w-28 h-28 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl border-2 border-amber-300">
+                  <div className="w-28 h-28 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl border-4 border-amber-300 shadow-sm">
                     {pet.species === 'Kucing' ? '🐱' : '🐶'}
                   </div>
                 )}
-                <div className="space-y-1 text-xs flex-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <p><b>Nama Anabul:</b> <span className="text-sm font-bold text-slate-900">{pet.name}</span></p>
-                    <p><b>Jenis Hewan:</b> {pet.species}</p>
-                    <p><b>Ras / Breed:</b> {pet.breed || '-'}</p>
-                    <p><b>Umur:</b> {pet.age ? `${pet.age} Bulan` : '-'}</p>
-                    <p><b>Berat Badan:</b> {pet.weight ? `${pet.weight} kg` : '-'}</p>
-                    <p><b>WhatsApp Pemilik:</b> +{pet.phone_number}</p>
+                <div className="space-y-1.5 text-xs flex-1">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <p><b>Nama Anabul:</b> <span className="text-sm font-black text-amber-950">{pet.name}</span></p>
+                    <p><b>Jenis Hewan:</b> <span className="font-semibold text-slate-700">{pet.species}</span></p>
+                    <p><b>Ras / Breed:</b> <span className="font-semibold text-slate-700">{pet.breed || '-'}</span></p>
+                    <p><b>Umur:</b> <span className="font-semibold text-slate-700">{pet.age ? `${pet.age} Bulan` : '-'}</span></p>
+                    <p><b>Berat Badan:</b> <span className="font-semibold text-amber-700">{pet.weight ? `${pet.weight} kg` : '-'}</span></p>
+                    <p><b>WhatsApp:</b> <span className="font-semibold text-slate-700">+{pet.phone_number}</span></p>
                   </div>
-                  <div className="pt-2 border-t mt-2">
-                    <p className="text-[10px] text-slate-500">Pemilik Akun Terdaftar: {user.email}</p>
+                  <div className="pt-2 border-t border-slate-100 mt-2 flex justify-between items-center text-[10px] text-slate-500">
+                    <span>Pemilik: {user.email}</span>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold">Terverifikasi</span>
                   </div>
                 </div>
               </div>
 
-              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing DENGAN KOLOM DOKTER HEWAN */}
-              <div className="space-y-4">
-                <h3 className="font-bold text-sm text-slate-800 border-b border-amber-400 pb-1">
-                  📋 LEMBAR VALIDASI VAKSINASI & MEDICINE RECORD
+              {/* Tabel Catatan Stiker Vaksinasi & Obat Cacing */}
+              <div className="space-y-3 mb-6">
+                <h3 className="font-extrabold text-xs text-amber-900 border-b border-amber-300 pb-1.5 flex items-center gap-1.5">
+                  <span>📋</span> LEMBAR VALIDASI VAKSINASI &amp; MEDICINE RECORD
                 </h3>
 
-                <table className="w-full text-left border-collapse text-xs bg-white rounded-xl overflow-hidden border border-slate-200">
+                <table className="w-full text-left border-collapse text-xs bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-sm">
                   <thead>
-                    <tr className="bg-amber-600 text-white text-[10px]">
-                      <th className="p-2 border">Penanganan</th>
-                      <th className="p-2 border">Jenis Vaksin / Obat</th>
-                      <th className="p-2 border">Tanggal</th>
-                      <th className="p-2 border">Jatuh Tempo</th>
-                      <th className="p-2 border">Dokter Hewan</th>
-                      <th className="p-2 border text-center">Stiker / Cap / TTD</th>
+                    <tr className="bg-amber-700 text-white text-[10px] uppercase tracking-wider">
+                      <th className="p-2.5 border-r border-amber-800">Penanganan</th>
+                      <th className="p-2.5 border-r border-amber-800">Jenis Vaksin / Obat</th>
+                      <th className="p-2.5 border-r border-amber-800">Tanggal</th>
+                      <th className="p-2.5 border-r border-amber-800">Jatuh Tempo</th>
+                      <th className="p-2.5 border-r border-amber-800">Dokter Hewan</th>
+                      <th className="p-2.5 text-center">Stiker / Cap / TTD</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-amber-100">
                     <tr>
-                      <td className="p-2 border font-semibold">💉 Vaksinasi</td>
-                      <td className="p-2 border">{pet.vaccine_type || 'Vaksin Standar'}</td>
-                      <td className="p-2 border">{pet.last_vaccine || '-'}</td>
-                      <td className="p-2 border font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
-                      <td className="p-2 border font-bold text-slate-800">
+                      <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">💉 Vaksinasi</td>
+                      <td className="p-2.5 border-r border-amber-100 text-slate-700">{pet.vaccine_type || 'Vaksin Standar'}</td>
+                      <td className="p-2.5 border-r border-amber-100 text-slate-600">{pet.last_vaccine || '-'}</td>
+                      <td className="p-2.5 border-r border-amber-100 font-bold text-emerald-700">{formatDateLocale(nextVaccine) || '-'}</td>
+                      <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
                         {pet.vaccine_vet_name || '-'}
                       </td>
-                      <td className="p-2 border text-center">
+                      <td className="p-2.5 text-center">
                         {pet.vaccine_proof_url ? (
-                          <img src={pet.vaccine_proof_url} alt="Stiker/TTD Vaksin" className="w-10 h-10 object-cover rounded mx-auto border" />
+                          <img src={pet.vaccine_proof_url} alt="Stiker Vaksin" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
                         ) : (
                           <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
                       </td>
                     </tr>
                     <tr>
-                      <td className="p-2 border font-semibold">💊 Obat Cacing</td>
-                      <td className="p-2 border">Deworming Routine</td>
-                      <td className="p-2 border">{pet.deworming_date || '-'}</td>
-                      <td className="p-2 border font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
-                      <td className="p-2 border font-bold text-slate-800">
+                      <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">💊 Obat Cacing</td>
+                      <td className="p-2.5 border-r border-amber-100 text-slate-700">Deworming Routine</td>
+                      <td className="p-2.5 border-r border-amber-100 text-slate-600">{pet.deworming_date || '-'}</td>
+                      <td className="p-2.5 border-r border-amber-100 font-bold text-indigo-700">{formatDateLocale(nextDeworming) || '-'}</td>
+                      <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
                         {pet.deworming_vet_name || '-'}
                       </td>
-                      <td className="p-2 border text-center">
+                      <td className="p-2.5 text-center">
                         {pet.deworming_proof_url ? (
-                          <img src={pet.deworming_proof_url} alt="Cap/TTD Obat Cacing" className="w-10 h-10 object-cover rounded mx-auto border" />
+                          <img src={pet.deworming_proof_url} alt="Cap Obat Cacing" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300 shadow-sm" />
                         ) : (
                           <span className="text-[9px] text-slate-400 italic">[ Belum Ada TTD ]</span>
                         )}
@@ -1061,27 +1078,27 @@ export default function Home() {
                 </table>
 
                 {pet.medical_history && (
-                  <div className="p-3 bg-white rounded-xl border text-xs">
-                    <p className="font-bold text-slate-700 mb-1">Catatan Diagnosa / Pesan Dokter Hewan:</p>
+                  <div className="p-3 bg-white/80 rounded-xl border border-amber-200 text-xs">
+                    <p className="font-bold text-slate-700 mb-0.5">Catatan Diagnosa / Pesan Dokter Hewan:</p>
                     <p className="text-slate-600 italic">{pet.medical_history}</p>
                   </div>
                 )}
               </div>
 
-              {/* QR Code Verifikasi Menggunakan pasporanabulku.web.id */}
-              <div className="flex justify-between items-end pt-6 mt-4 border-t border-amber-300">
+              {/* QR Code Verifikasi Estetis & Footer Kartu */}
+              <div className="flex justify-between items-end pt-4 border-t-2 border-amber-200">
                 <div className="text-[10px] text-slate-500 space-y-0.5">
-                  <p>✔ Terverifikasi Otomatis oleh Sistem Paspor Anabul Digital</p>
+                  <p className="font-bold text-amber-900">✔ Resmi Terverifikasi di pasporanabulku.web.id</p>
                   <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p className="font-semibold text-amber-900 mt-1">Scan QR Code untuk verifikasi keaslian rekam medis.</p>
+                  <p className="text-[9px] text-slate-400">Scan QR Code di samping untuk otentikasi rekam medis resmi.</p>
                 </div>
-                <div className="text-center bg-white p-2 rounded-xl border border-amber-400 shadow-sm">
+                <div className="text-center bg-white p-2.5 rounded-2xl border-2 border-amber-500 shadow-md">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://pasporanabulku.web.id/verify/${pet.id}`} 
                     alt="QR Verifikasi Paspor" 
                     className="w-20 h-20 mx-auto"
                   />
-                  <p className="text-[8px] font-bold text-slate-800 mt-1 uppercase tracking-wider">Scan Verifikasi</p>
+                  <p className="text-[8px] font-black text-amber-900 mt-1 uppercase tracking-wider">Scan Verifikasi</p>
                 </div>
               </div>
 
