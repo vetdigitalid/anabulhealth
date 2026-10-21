@@ -373,8 +373,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-8 max-w-2xl mx-auto">
-      {/* Header */}
+    <main className="min-h-screen bg-slate-100 p-4 md:p-8 max-w-2xl mx-auto">
+      {/* Header App */}
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm print:hidden">
         <div>
           <div className="flex items-center gap-2">
@@ -447,7 +447,6 @@ export default function Home() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Upload Foto */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
               Foto Anabul:
@@ -543,7 +542,6 @@ export default function Home() {
             <p className="text-[10px] text-slate-400 mt-0.5">Wajib diisi agar notifikasi WhatsApp pengingat otomatis terkirim</p>
           </div>
 
-          {/* Umur & Berat Badan */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -580,7 +578,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tanggal & Jenis Vaksin + Obat Cacing */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -679,8 +676,8 @@ export default function Home() {
         </form>
       </div>
 
-      {/* Daftar Rekam Medis */}
-      <div className="space-y-4">
+      {/* Daftar Rekam Medis & Kartu Paspor */}
+      <div className="space-y-6">
         <div className="flex justify-between items-center print:hidden">
           <h2 className="text-lg font-bold text-slate-800">
             📋 Paspor Anabul Saya ({filteredPets.length} {isVip ? '/ Unlimited VIP' : '/ 1 Kuota Gratis'})
@@ -704,7 +701,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {filteredPets.map((pet) => {
               const isYoung = pet.age && pet.age <= 6
               const nextVaccine = calculateNextDate(pet.last_vaccine, isYoung, 'vaccine') 
@@ -714,145 +711,243 @@ export default function Home() {
               const dewormingStatus = getDueStatus(nextDeworming)
 
               return (
-                <div
-                  key={pet.id}
-                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {pet.photo_url ? (
-                        <img
-                          src={pet.photo_url}
-                          alt={pet.name}
-                          className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-xl text-blue-600 font-bold border border-blue-100">
-                          {pet.species === 'Kucing' ? '🐱' : pet.species === 'Anjing' ? '🐶' : '🐾'}
+                <div key={pet.id} className="space-y-4">
+                  
+                  {/* KARTU PASPOR DIGITAL ESTETIK (Desain VIP Gold / Ready Share Status WA/IG) */}
+                  <div className="relative overflow-hidden rounded-3xl bg-slate-950 text-white p-6 shadow-2xl border-2 border-amber-500/40">
+                    
+                    {/* Background Pattern Watermark */}
+                    <div className="absolute -right-8 -bottom-8 opacity-5 text-9xl pointer-events-none select-none">
+                      🐾
+                    </div>
+
+                    {/* Header Kartu Paspor */}
+                    <div className="flex justify-between items-center pb-4 border-b border-amber-500/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 flex items-center justify-center text-slate-950 font-black text-lg shadow-md">
+                          🐾
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{pet.name}</h3>
-                        <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium inline-block mt-0.5">
-                          {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
+                        <div>
+                          <h3 className="font-extrabold text-sm md:text-base tracking-widest bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-transparent uppercase">
+                            OFFICIAL PET PASSPORT
+                          </h3>
+                          <p className="text-[10px] text-amber-200/70 tracking-widest uppercase">Republik Anabul • Medical Identity</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 text-[10px] font-bold rounded-full border border-amber-500/30 tracking-wider">
+                          #PASSP-{pet.id.slice(0, 6).toUpperCase()}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 print:hidden">
-                      <button
-                        onClick={() => handleEdit(pet)}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                        title="Edit Data"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(pet.id, pet.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                        title="Hapus Data"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Informasi Ringkas Umur, Berat, dan WhatsApp */}
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                    {pet.age && <p><b>Umur:</b> {pet.age} Bln</p>}
-                    {pet.weight && (
-                      <>
-                        <span className="text-slate-300">|</span>
-                        <p className="text-amber-700 font-medium">⚖️ <b>Berat:</b> {pet.weight} kg</p>
-                      </>
-                    )}
-                    <span className="text-slate-300">|</span>
-                    <p className="text-blue-600 font-medium">
-                      Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
-                    </p>
-                  </div>
-
-                  {/* Kotak Pengingat & Jenis Vaksin */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
-                    {pet.last_vaccine ? (
-                      <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <p className="text-emerald-800 font-semibold mb-1">
-                              💉 Vaksin {isYoung ? 'Berikutnya (+1 Bln)' : 'Ulang (+1 Thn)'}
-                            </p>
-                            {pet.vaccine_type && (
-                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">
-                                {pet.vaccine_type}
-                              </span>
+                    {/* Isi Utama Kartu (Foto + Detail Paspor) */}
+                    <div className="grid grid-cols-12 gap-4 py-5 items-center">
+                      {/* Foto Anabul Frame Gold */}
+                      <div className="col-span-4 flex justify-center">
+                        <div className="relative">
+                          <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-xl bg-slate-900 flex items-center justify-center">
+                            {pet.photo_url ? (
+                              <img
+                                src={pet.photo_url}
+                                alt={pet.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-4xl">
+                                {pet.species === 'Kucing' ? '🐱' : pet.species === 'Anjing' ? '🐶' : '🐾'}
+                              </div>
                             )}
                           </div>
-                          <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
-                          <p className="text-emerald-700 font-bold mt-0.5">
-                            Jatuh Tempo: {formatDateLocale(nextVaccine)}
-                          </p>
-                        </div>
-                        {vaccineStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
-                              {vaccineStatus.label}
-                            </span>
+                          <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-slate-950 p-1 rounded-full text-xs shadow-lg border border-slate-950" title="Terverifikasi">
+                            ✓
                           </div>
-                        )}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
-                        💉 Belum ada riwayat vaksin
-                      </div>
-                    )}
 
-                    {pet.deworming_date ? (
-                      <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
+                      {/* Detail Informasi Paspor */}
+                      <div className="col-span-8 space-y-2 text-xs">
                         <div>
-                          <p className="text-indigo-800 font-semibold mb-1">
-                            💊 Obat Cacing {isYoung ? '(+1 Bln)' : '(+3 Bln)'}
-                          </p>
-                          <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
-                          <p className="text-indigo-700 font-bold mt-0.5">
-                            Jatuh Tempo: {formatDateLocale(nextDeworming)}
+                          <p className="text-[9px] text-slate-400 uppercase tracking-wider">Nama Anabul</p>
+                          <h2 className="text-2xl font-black text-white tracking-wide leading-tight truncate">
+                            {pet.name}
+                          </h2>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <div>
+                            <p className="text-[9px] text-slate-400 uppercase tracking-wider">Jenis / Ras</p>
+                            <p className="font-semibold text-amber-200 truncate">
+                              {pet.species} {pet.breed ? `(${pet.breed})` : ''}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-slate-400 uppercase tracking-wider">Berat & Umur</p>
+                            <p className="font-semibold text-white">
+                              {pet.weight ? `${pet.weight} kg` : '-'} • {pet.age ? `${pet.age} Bln` : '-'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase tracking-wider">Vaksinasi Terakhir</p>
+                          <p className="font-medium text-emerald-400">
+                            {pet.last_vaccine ? `${pet.last_vaccine} (${pet.vaccine_type || 'Standar'})` : 'Belum Ada Data'}
                           </p>
                         </div>
-                        {dewormingStatus && (
-                          <div className="mt-2">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
-                              {dewormingStatus.label}
-                            </span>
-                          </div>
-                        )}
                       </div>
-                    ) : (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
-                        💊 Belum ada riwayat obat cacing
+                    </div>
+
+                    {/* Schedule Bar (Status Masa Berlaku) */}
+                    <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] mb-3">
+                      <div>
+                        <p className="text-slate-400 text-[10px]">🗓️ Jadwal Vaksinasi Ulang:</p>
+                        <p className="font-bold text-emerald-300">
+                          {nextVaccine ? formatDateLocale(nextVaccine) : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[10px]">💊 Jadwal Obat Cacing:</p>
+                        <p className="font-bold text-indigo-300">
+                          {nextDeworming ? formatDateLocale(nextDeworming) : '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Footer Stempel / Validasi Dokter Hewan */}
+                    <div className="flex justify-between items-end pt-2 border-t border-white/10 text-[9px] text-slate-400">
+                      <div>
+                        <p className="text-amber-300 font-bold tracking-wider">VETERINARY HEALTH SERVICE</p>
+                        <p>Dokter Hewan Penanggung Jawab:</p>
+                        <p className="text-white font-semibold">drh. Nur Rohman Najib</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="inline-block px-2 py-0.5 rounded border border-amber-400/40 text-amber-300 font-mono text-[8px] uppercase tracking-widest">
+                          AUTHENTIC DIGITAL CARD
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* DETAIL REKAM MEDIS & ACTION BUTTONS */}
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-700">Detail Rekam Medis:</p>
+                      <div className="flex items-center gap-1 print:hidden">
+                        <button
+                          onClick={() => handleEdit(pet)}
+                          className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                          title="Edit Data"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDelete(pet.id, pet.name)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Hapus Data"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                      <p className="text-blue-600 font-medium">
+                        Program: {isYoung ? 'Anak (Seri Vaksin 1 Bln)' : 'Dewasa (Booster 1 Thn)'}
+                      </p>
+                      {pet.phone_number && (
+                        <>
+                          <span className="text-slate-300">|</span>
+                          <p className="text-slate-600">📱 WA: {pet.phone_number}</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Status Tenggat */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+                      {pet.last_vaccine ? (
+                        <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100/80 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <p className="text-emerald-800 font-semibold mb-1">
+                                💉 Vaksin Ulang
+                              </p>
+                              {pet.vaccine_type && (
+                                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">
+                                  {pet.vaccine_type}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-600">Terakhir: <b>{pet.last_vaccine}</b></p>
+                            <p className="text-emerald-700 font-bold mt-0.5">
+                              Jatuh Tempo: {formatDateLocale(nextVaccine)}
+                            </p>
+                          </div>
+                          {vaccineStatus && (
+                            <div className="mt-2">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${vaccineStatus.color}`}>
+                                {vaccineStatus.label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                          💉 Belum ada riwayat vaksin
+                        </div>
+                      )}
+
+                      {pet.deworming_date ? (
+                        <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 flex flex-col justify-between">
+                          <div>
+                            <p className="text-indigo-800 font-semibold mb-1">
+                              💊 Obat Cacing Ulang
+                            </p>
+                            <p className="text-slate-600">Terakhir: <b>{pet.deworming_date}</b></p>
+                            <p className="text-indigo-700 font-bold mt-0.5">
+                              Jatuh Tempo: {formatDateLocale(nextDeworming)}
+                            </p>
+                          </div>
+                          {dewormingStatus && (
+                            <div className="mt-2">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] rounded-md border font-medium ${dewormingStatus.color}`}>
+                                {dewormingStatus.label}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-400">
+                          💊 Belum ada riwayat obat cacing
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tombol Tindakan Cepat */}
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
+                      <button
+                        onClick={() => handleMarkDone(pet.id, 'vaccine')}
+                        className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      >
+                        ✅ Sudah Vaksin Hari Ini
+                      </button>
+                      <button
+                        onClick={() => handleMarkDone(pet.id, 'deworming')}
+                        className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
+                      >
+                        ✅ Sudah Obat Cacing Hari Ini
+                      </button>
+                    </div>
+
+                    {pet.medical_history && (
+                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
+                        <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
+                        {pet.medical_history}
                       </div>
                     )}
                   </div>
 
-                  {/* Tombol Mark as Done */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 print:hidden">
-                    <button
-                      onClick={() => handleMarkDone(pet.id, 'vaccine')}
-                      className="px-3 py-1.5 text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
-                    >
-                      ✅ Sudah Vaksin Hari Ini
-                    </button>
-                    <button
-                      onClick={() => handleMarkDone(pet.id, 'deworming')}
-                      className="px-3 py-1.5 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold rounded-lg flex items-center gap-1 transition-all"
-                    >
-                      ✅ Sudah Obat Cacing Hari Ini
-                    </button>
-                  </div>
-
-                  {pet.medical_history && (
-                    <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
-                      <span className="font-semibold text-slate-700 block mb-1">Catatan Medis:</span>
-                      {pet.medical_history}
-                    </div>
-                  )}
                 </div>
               )
             })}
