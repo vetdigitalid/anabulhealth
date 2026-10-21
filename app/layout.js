@@ -11,7 +11,7 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="id">
-      <body className="bg-slate-100 text-slate-800 antialiased">
+      <body className="bg-slate-100 text-slate-800 antialiased min-h-screen">
         {children}
         {clientKey && (
           <Script
