@@ -1236,7 +1236,7 @@ export default function Home() {
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <p className="font-bold text-indigo-900 mb-1">⚙️ Aturan Perhitungan Sistem:</p>
                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
-                  <li><b>Anak (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
+                  <li><b>Kitten (&le; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 bulan sekali</b> (Seri Vaksin Primer).</li>
                   <li><b>Dewasa (&gt; 6 Bulan):</b> Interval jadwal vaksinasi dikalkulasi otomatis <b>1 tahun sekali</b> (Booster Tahunan).</li>
                   <li><b>Obat Cacing:</b> Kitten 1 bulan sekali, Dewasa 3 bulan sekali.</li>
                 </ul>
