@@ -440,13 +440,15 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Header Elegan */}
+      {/* Header Elegan dengan Logo Resmi */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm mb-5 print:hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-xl">
-              🐾
-            </div>
+            <img 
+              src="/icon-192.png.jpg" 
+              alt="Logo Paspor Anabul" 
+              className="w-12 h-12 object-contain rounded-xl shadow-sm"
+            />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg font-extrabold text-slate-800 tracking-tight">PASPOR ANABUL</h1>
@@ -964,7 +966,7 @@ export default function Home() {
       </div>
 
       {/* ======================================================== */}
-      {/* TAMPILAN BUKU PASPOR FISIK (PREMIUM & ESTETIS) */}
+      {/* TAMPILAN BUKU PASPOR FISIK (DENGAN LOGO RESMI) */}
       {/* ======================================================== */}
       <div className="hidden print:block passport-book-container">
         {filteredPets.map((pet) => {
@@ -975,17 +977,14 @@ export default function Home() {
           return (
             <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl my-6 text-slate-800 shadow-xl relative overflow-hidden">
               
-              {/* Watermark / Aksen Elegan Belakang */}
-              <div className="absolute -right-10 -bottom-10 text-9xl opacity-5 select-none pointer-events-none">
-                🐾
-              </div>
-
-              {/* Header Paspor Premium dengan Logo & Domain pasporanabulku.web.id */}
+              {/* Header Paspor Premium dengan Logo Resmi & Domain pasporanabulku.web.id */}
               <div className="flex items-center justify-between border-b-2 border-amber-600 pb-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center text-2xl shadow-md">
-                    🐾
-                  </div>
+                  <img 
+                    src="/icon-192.png.jpg" 
+                    alt="Logo Paspor Anabul" 
+                    className="w-14 h-14 object-contain"
+                  />
                   <div>
                     <h1 className="text-xl font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
                     <p className="text-[11px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL PASSPORT</p>
