@@ -23,6 +23,7 @@ export default function Home() {
   const [proofModal, setProofModal] = useState({ open: false, petId: null, type: null })
   const [vetName, setVetName] = useState('')
   const [proofFile, setProofFile] = useState(null)
+  const [selectedItemName, setSelectedItemName] = useState('') // Pilihan jenis vaksin / obat cacing saat verifikasi
   const [submittingProof, setSubmittingProof] = useState(false)
 
   // State Modal Input Riwayat Lampau (Manual History)
@@ -232,9 +233,23 @@ export default function Home() {
   }
 
   const openMarkDoneModal = (petId, type) => {
+    const targetPet = pets.find(p => p.id === petId)
     setProofModal({ open: true, petId, type })
     setProofFile(null)
     setVetName('')
+    
+    // Set default item_name otomatis saat modal dibuka
+    if (type === 'vaccine') {
+      if (targetPet?.species === 'Kucing') {
+        setSelectedItemName('Tetracat (F4)')
+      } else if (targetPet?.species === 'Anjing') {
+        setSelectedItemName('Vanguard / Eurican (DHPPI)')
+      } else {
+        setSelectedItemName('Vaksin Standar')
+      }
+    } else {
+      setSelectedItemName('Drontal / Obat Cacing Rutin')
+    }
   }
 
   const handleConfirmMarkDone = async () => {
@@ -270,7 +285,7 @@ export default function Home() {
       const todayStr = new Date().toISOString().split('T')[0]
       const targetPet = pets.find(p => p.id === petId)
       const isYoung = targetPet?.age && targetPet.age <= 6
-      const itemName = type === 'vaccine' ? (targetPet?.vaccine_type || 'Vaksin Standar') : 'Deworming Routine'
+      const itemName = selectedItemName || (type === 'vaccine' ? 'Vaksin Standar' : 'Deworming Routine')
       const nextDateObj = calculateNextDate(todayStr, isYoung, type)
       const nextDateStr = nextDateObj ? nextDateObj.toISOString().split('T')[0] : null
 
@@ -291,7 +306,7 @@ export default function Home() {
 
       // 2. Update status terakhir di pets
       const updateData = type === 'vaccine' 
-        ? { last_vaccine: todayStr, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
+        ? { last_vaccine: todayStr, vaccine_type: itemName, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
         : { deworming_date: todayStr, deworming_proof_url: proofUrl, deworming_vet_name: vetName }
 
       const { error } = await supabase
@@ -300,7 +315,7 @@ export default function Home() {
         .eq('id', petId)
 
       if (!error) {
-        alert(`Berhasil diverifikasi! Riwayat ${typeText} baru telah ditambahkan.`)
+        alert(`Berhasil diverifikasi! Riwayat ${typeText} (${itemName}) baru telah ditambahkan.`)
         setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
@@ -380,7 +395,6 @@ export default function Home() {
       if (window.snap) {
         window.snap.pay(token, {
           onSuccess: async function(result) {
-            // Update langsung status is_vip di Supabase saat sukses
             const { error } = await supabase
               .from('profiles')
               .update({ is_vip: true })
@@ -1321,7 +1335,7 @@ export default function Home() {
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="font-bold text-slate-800 text-sm">
-                🩺 Verifikasi ({proofModal.type === 'vaccine' ? 'Vaksinasi' : 'Obat Cacing'})
+                🩺 Verifikasi ({proofModal.type === 'vaccine' ? 'Vaksinasi Baru' : 'Obat Cacing Baru'})
               </h3>
               <button
                 onClick={() => setProofModal({ open: false, petId: null, type: null })}
@@ -1332,6 +1346,49 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
+              {/* Pilihan Jenis Vaksin atau Obat Cacing */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  {proofModal.type === 'vaccine' ? 'Jenis Vaksin yang Diberikan:' : 'Nama Obat Cacing:'}
+                </label>
+                {proofModal.type === 'vaccine' ? (
+                  <select
+                    value={selectedItemName}
+                    onChange={(e) => setSelectedItemName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                  >
+                    {pets.find(p => p.id === proofModal.petId)?.species === 'Kucing' ? (
+                      <>
+                        <option value="Tricat (F3)">Tricat (F3)</option>
+                        <option value="Tetracat (F4)">Tetracat (F4)</option>
+                        <option value="Rabies">Rabies</option>
+                        <option value="Felocell / Lainnya">Felocell / Lainnya</option>
+                      </>
+                    ) : pets.find(p => p.id === proofModal.petId)?.species === 'Anjing' ? (
+                      <>
+                        <option value="Vanguard / Eurican (DHPPI)">Vanguard / Eurican (DHPPI)</option>
+                        <option value="Rabies">Rabies</option>
+                        <option value="Parvo">Parvo</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Vaksin Standar">Vaksin Standar</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </>
+                    )}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Contoh: Drontal Cat / Wormix"
+                    value={selectedItemName}
+                    onChange={(e) => setSelectedItemName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                  />
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Nama Dokter Hewan Pemeriksa <span className="text-rose-500">*</span>:
