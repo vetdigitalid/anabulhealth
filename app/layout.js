@@ -28,9 +28,9 @@ export default function RootLayout({ children }) {
       <body className="bg-slate-50 text-slate-800 antialiased">
         {children}
 
-        {/* Script Snap Midtrans */}
+        {/* Script Snap Midtrans Sandbox */}
         <Script
-          src="https://app.midtrans.com/snap/snap.js"
+          src="https://app.sandbox.midtrans.com/snap/snap.js"
           data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
           strategy="lazyOnload"
         />
