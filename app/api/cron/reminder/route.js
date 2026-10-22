@@ -166,7 +166,7 @@ export async function GET(request) {
               </ul>
               <p>Jangan lupa untuk melakukan tindakan medis atau berkonsultasi dengan dokter hewan ya!</p>
               <br/>
-              <a href="https://anabulhealth.vercel.app" style="background: #2563eb; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 8px; font-weight: bold;">Buka Paspor Anabul</a>
+              <a href="https://pasporanabulku.web.id" style="background: #2563eb; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 8px; font-weight: bold;">Buka Paspor Anabul</a>
             </div>
           `
         })
@@ -177,7 +177,7 @@ export async function GET(request) {
       if (item.waReminders.length > 0 && item.phone && process.env.WA_API_TOKEN) {
         const waMessage = `🐾 *PENGINGAT PASPOR ANABUL*\n\nHalo Kak! Berikut adalah jadwal perawatan terdekat untuk anabul Anda:\n\n` +
           item.waReminders.join('\n') +
-          `\n\n_Buka Paspor Anabul selengkapnya di: https://anabulhealth.vercel.app_`
+          `\n\n_Buka Paspor Anabul selengkapnya di: https://pasporanabulku.web.id_`
 
         await sendWhatsApp(item.phone, waMessage)
         waSent++
