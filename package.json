@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "midtrans-client": "^1.4.2",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
