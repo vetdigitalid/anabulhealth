@@ -674,7 +674,7 @@ export default function Home() {
             />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight">PASPOR ANABUL</h1>
+                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight">KARTU KESEHATAN ANABUL</h1>
                 {isVip && (
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full border border-amber-200">
                     👑 VIP
@@ -905,6 +905,7 @@ export default function Home() {
                     <option value="Tricat (F3)">Tricat (F3)</option>
                     <option value="Tetracat (F4)">Tetracat (F4)</option>
                     <option value="Rabies">Rabies</option>
+                    <option value="FeLV">FeLV (Vaksin Pilihan)</option>
                     <option value="Felocell / Lainnya">Felocell / Lainnya</option>
                   </>
                 ) : form.species === 'Anjing' ? (
@@ -969,7 +970,7 @@ export default function Home() {
       <div className="space-y-4 print:hidden">
         <div className="flex justify-between items-center px-1">
           <h2 className="text-base font-extrabold text-slate-800">
-            📋 Paspor Anabul Saya <span className="text-xs font-normal text-slate-400">({filteredPets.length})</span>
+            📋 Kartu Kesehatan Anabul Saya <span className="text-xs font-normal text-slate-400">({filteredPets.length})</span>
           </h2>
         </div>
 
@@ -1027,7 +1028,7 @@ export default function Home() {
                       <button
                         onClick={() => handlePrintSpecific(pet.id)}
                         className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-white rounded-lg font-semibold text-xs flex items-center gap-1 px-2"
-                        title="Cetak Paspor Hewan Ini"
+                        title="Cetak Kartu Hewan Ini"
                       >
                         🖨️ Cetak
                       </button>
@@ -1160,7 +1161,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* CETAK BUKU PASPOR KHUSUS HEWAN YANG DIPILIH */}
+      {/* CETAK KARTU KESEHATAN KHUSUS HEWAN YANG DIPILIH */}
       <div className="hidden print:block">
         {filteredPets.map((pet) => {
           if (printingPetId && pet.id !== printingPetId) return null
@@ -1173,15 +1174,15 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
                   <div>
-                    <h1 className="text-lg font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
-                    <p className="text-[10px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL PASSPORT</p>
+                    <h1 className="text-lg font-black tracking-widest text-amber-900 uppercase">KARTU KESEHATAN ANABUL</h1>
+                    <p className="text-[10px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL CARD</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="inline-block px-2.5 py-0.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-[10px] font-extrabold tracking-wide">
                     🌐 pasporanabulku.web.id
                   </span>
-                  <p className="text-[8px] text-slate-400 mt-0.5">NO. REG: PAS-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
+                  <p className="text-[8px] text-slate-400 mt-0.5">NO. REG: KRT-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
                 </div>
               </div>
 
@@ -1353,7 +1354,7 @@ export default function Home() {
                 disabled={submittingHistory}
                 className="px-4 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-sm"
               >
-                {submittingHistory ? 'Menyimpan...' : '💾 Simpan ke Paspor'}
+                {submittingHistory ? 'Menyimpan...' : '💾 Simpan ke Kartu'}
               </button>
             </div>
           </div>
@@ -1392,6 +1393,7 @@ export default function Home() {
                         <option value="Tricat (F3)">Tricat (F3)</option>
                         <option value="Tetracat (F4)">Tetracat (F4)</option>
                         <option value="Rabies">Rabies</option>
+                        <option value="FeLV">FeLV (Vaksin Pilihan)</option>
                         <option value="Felocell / Lainnya">Felocell / Lainnya</option>
                       </>
                     ) : pets.find(p => p.id === proofModal.petId)?.species === 'Anjing' ? (
@@ -1495,7 +1497,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal Panduan */}
+      {/* Modal Panduan (Teks Vaksin Kucing Direvisi) */}
       {showGuideModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border my-8">
@@ -1520,18 +1522,29 @@ export default function Home() {
                 </ul>
               </div>
 
+              {/* Jadwal Vaksin Kucing yang Direvisi */}
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl space-y-2">
                 <p className="font-bold text-blue-900 text-sm flex items-center gap-1.5">
                   <span>🐱</span> Jadwal Standar Vaksinasi Kucing:
                 </p>
-                <div className="space-y-1.5 text-blue-950">
-                  <p><b>• Usia 8 Minggu:</b> Vaksin Pertama (Tricat / F3 - Feline Panleukopenia, Calicivirus, Rhinotracheitis).</p>
-                  <p><b>• Usia 12 Minggu (Booster 1):</b> Pengulangan Tricat / Tetracat (F4 mencakup Chlamydia).</p>
-                  <p><b>• Usia 16 Minggu (Booster 2):</b> Pengulangan lanjutan + Vaksin Rabies.</p>
-                  <p><b>• Tahunan (Annual):</b> Booster ulangan Tricat/F4 &amp; Rabies diulang setiap 1 tahun sekali seumur hidup.</p>
+                <div className="space-y-2 text-blue-950">
+                  <p><b>1. Usia 8 Minggu:</b> Vaksin Pertama (F3 / Feline Panleukopenia, Calicivirus, Rhinotracheitis).</p>
+                  <p>
+                    <b>2. Usia 12 Minggu (Booster 1):</b> Pengulangan F3 / F4 (mencakup Chlamydia).<br/>
+                    <span className="text-blue-700 font-medium block mt-0.5">• Vaksin pilihan: FeLV</span>
+                  </p>
+                  <p>
+                    <b>3. Usia 16 Minggu (Booster 2):</b> Pengulangan lanjutan + Vaksin Rabies.<br/>
+                    <span className="text-blue-700 font-medium block mt-0.5">• Vaksin pilihan: FeLV</span>
+                  </p>
+                  <p>
+                    <b>4. Tahunan (Annual):</b> Booster ulangan F3/F4 &amp; Rabies diulang setiap 1 tahun sekali seumur hidup.<br/>
+                    <span className="text-blue-700 font-medium block mt-0.5">• Vaksin pilihan: FeLV</span>
+                  </p>
                 </div>
               </div>
 
+              {/* Jadwal Vaksin Anjing */}
               <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-2">
                 <p className="font-bold text-emerald-900 text-sm flex items-center gap-1.5">
                   <span>🐶</span> Jadwal Standar Vaksinasi Anjing:
@@ -1544,6 +1557,7 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Aturan Obat Cacing */}
               <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl space-y-1.5">
                 <p className="font-bold text-indigo-900 text-sm flex items-center gap-1.5">
                   <span>💊</span> Aturan Pemberian Obat Cacing Rutin:
