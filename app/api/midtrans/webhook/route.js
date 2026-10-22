@@ -1,36 +1,35 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY // Menggunakan service_role agar bisa bypass RLS
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+import midtransClient from 'midtrans-client'
 
 export async function POST(req) {
   try {
     const body = await req.json()
-    const { order_id, transaction_status, fraud_status } = body
+    const { order_id, gross_amount, customer_details } = body
 
-    // Format order_id: VIP-[userId_prefix]-[timestamp]
-    if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      if (fraud_status === 'accept' || !fraud_status) {
-        // Ambil userPrefix dari order_id
-        const parts = order_id.split('-')
-        const userPrefix = parts[1]
+    // Tentukan mode berdasarkan Environment Variable Vercel
+    // Jika tidak diisi, default otomatis ke false (Sandbox)
+    const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' || 
+                         process.env.MIDTRANS_IS_PRODUCTION === 'true'
 
-        // Update status user menjadi VIP di Supabase
-        const { error } = await supabase
-          .from('profiles')
-          .update({ is_vip: true })
-          .ilike('id', `${userPrefix}%`)
+    const snap = new midtransClient.Snap({
+      isProduction: isProduction, // Akan bernilai false untuk mode Sandbox
+      serverKey: process.env.MIDTRANS_SERVER_KEY,
+      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
+    })
 
-        if (error) console.error('Gagal update status VIP di Supabase:', error)
-      }
+    const parameter = {
+      transaction_details: {
+        order_id: order_id,
+        gross_amount: gross_amount,
+      },
+      customer_details: customer_details,
     }
 
-    return NextResponse.json({ status: 'OK' })
+    const token = await snap.createTransactionToken(parameter)
+
+    return NextResponse.json({ token })
   } catch (error) {
-    console.error('Webhook Error:', error)
+    console.error('Tokenizer Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
