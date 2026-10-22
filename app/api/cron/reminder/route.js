@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-// Tambahkan baris ini agar rute bersifat dinamis di Vercel
+// Baris ini memastikan rute bersifat dinamis di Vercel
 export const dynamic = 'force-dynamic'
 
-// Gunakan fallback agar tidak error saat proses build statis Vercel
+// Fallback agar tidak error saat proses build statis Vercel
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
@@ -154,7 +154,7 @@ export async function GET(request) {
       // 1. Kirim 1 Email Terkonsolidasi per User
       if (item.emailReminders.length > 0 && targetEmail && process.env.RESEND_API_KEY) {
         await resend.emails.send({
-          from: 'Paspor Anabul <onboarding@resend.dev>',
+          from: 'Paspor Anabul <no-reply@pasporanabulku.web.id>',
           to: targetEmail,
           subject: `🐾 Pengingat Paspor Anabul Anda`,
           html: `
