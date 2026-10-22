@@ -654,11 +654,12 @@ export default function Home() {
           .passport-page-container {
             display: block !important;
             page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            height: 100vh;
-            max-height: 100vh;
-            overflow: hidden;
-            box-sizing: border-box;
+            page-break-after: always !important;
+            height: 98vh !important;
+            max-height: 98vh !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            margin-bottom: 0 !important;
           }
         }
       `}</style>
