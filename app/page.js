@@ -19,13 +19,16 @@ export default function Home() {
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
   
-  // State Modal Verifikasi Realtime (Ditambah input update berat & umur)
+  // State Cetak Spesifik per Hewan
+  const [printingPetId, setPrintingPetId] = useState(null)
+
+  // State Modal Verifikasi Realtime
   const [proofModal, setProofModal] = useState({ open: false, petId: null, type: null })
   const [vetName, setVetName] = useState('')
   const [proofFile, setProofFile] = useState(null)
   const [selectedItemName, setSelectedItemName] = useState('') 
-  const [updateWeight, setUpdateWeight] = useState('') // 👈 State update berat badan saat verifikasi
-  const [updateAge, setUpdateAge] = useState('')       // 👈 State update umur saat verifikasi
+  const [updateWeight, setUpdateWeight] = useState('') 
+  const [updateAge, setUpdateAge] = useState('')       
   const [submittingProof, setSubmittingProof] = useState(false)
 
   // State Modal Input Riwayat Lampau (Manual History)
@@ -295,7 +298,6 @@ export default function Home() {
       const nextDateObj = calculateNextDate(todayStr, isYoung, type)
       const nextDateStr = nextDateObj ? nextDateObj.toISOString().split('T')[0] : null
 
-      // 1. Insert ke pet_records
       const { error: recordErr } = await supabase
         .from('pet_records')
         .insert([{
@@ -310,7 +312,6 @@ export default function Home() {
 
       if (recordErr) throw recordErr
 
-      // 2. Update status terakhir, umur, dan berat badan terbaru di tabel pets
       const updateData = type === 'vaccine' 
         ? { 
             last_vaccine: todayStr, 
@@ -579,8 +580,12 @@ export default function Home() {
     })
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handlePrintSpecific = (petId) => {
+    setPrintingPetId(petId)
+    setTimeout(() => {
+      window.print()
+      setPrintingPetId(null)
+    }, 300)
   }
 
   const filteredPets = pets.filter((pet) =>
@@ -641,13 +646,19 @@ export default function Home() {
             background: white !important;
             padding: 0 !important;
             margin: 0 !important;
+            -webkit-print-color-adjust: exact;
           }
           .print\\:hidden {
             display: none !important;
           }
-          .passport-book-container {
+          .passport-page-container {
             display: block !important;
-            page-break-after: always;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
           }
         }
       `}</style>
@@ -683,13 +694,6 @@ export default function Home() {
                 👑 Upgrade VIP
               </button>
             )}
-            <button
-              onClick={handlePrint}
-              className="text-xs px-3 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold transition-all flex items-center gap-1"
-              title="Cetak Buku Paspor"
-            >
-              🖨️ Cetak
-            </button>
             <button
               onClick={handleLogout}
               className="text-xs px-3 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 font-semibold transition-all"
@@ -1021,6 +1025,13 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
                       <button
+                        onClick={() => handlePrintSpecific(pet.id)}
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-white rounded-lg font-semibold text-xs flex items-center gap-1 px-2"
+                        title="Cetak Paspor Hewan Ini"
+                      >
+                        🖨️ Cetak
+                      </button>
+                      <button
                         onClick={() => handleEdit(pet)}
                         className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-white rounded-lg"
                         title="Edit Data"
@@ -1149,41 +1160,42 @@ export default function Home() {
         )}
       </div>
 
-      {/* CETAK BUKU PASPOR (MULTILINE HISTORY) */}
-      <div className="hidden print:block passport-book-container">
+      {/* CETAK BUKU PASPOR KHUSUS HEWAN YANG DIPILIH */}
+      <div className="hidden print:block">
         {filteredPets.map((pet) => {
+          if (printingPetId && pet.id !== printingPetId) return null
           const records = getCombinedRecords(pet)
 
           return (
-            <div key={`print-${pet.id}`} className="w-full max-w-2xl mx-auto p-8 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl my-6 text-slate-800 shadow-xl relative overflow-hidden">
+            <div key={`print-${pet.id}`} className="passport-page-container w-full max-w-2xl mx-auto p-6 border-4 border-amber-700 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/30 rounded-3xl text-slate-800 shadow-xl relative">
               
-              <div className="flex items-center justify-between border-b-2 border-amber-600 pb-4 mb-6">
+              <div className="flex items-center justify-between border-b-2 border-amber-600 pb-3 mb-4">
                 <div className="flex items-center gap-3">
-                  <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
+                  <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
                   <div>
-                    <h1 className="text-xl font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
-                    <p className="text-[11px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL PASSPORT</p>
+                    <h1 className="text-lg font-black tracking-widest text-amber-900 uppercase">PASPOR KESEHATAN ANABUL</h1>
+                    <p className="text-[10px] font-bold text-amber-700 tracking-wider">OFFICIAL PET MEDICAL PASSPORT</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-extrabold tracking-wide">
+                  <span className="inline-block px-2.5 py-0.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-[10px] font-extrabold tracking-wide">
                     🌐 pasporanabulku.web.id
                   </span>
-                  <p className="text-[9px] text-slate-400 mt-1">NO. REG: PAS-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
+                  <p className="text-[8px] text-slate-400 mt-0.5">NO. REG: PAS-2026-{pet.id.toString().substring(0,6).toUpperCase()}</p>
                 </div>
               </div>
 
-              <div className="flex gap-6 items-center bg-white/90 p-5 rounded-2xl border border-amber-200/80 shadow-sm mb-6">
+              <div className="flex gap-4 items-center bg-white/90 p-4 rounded-2xl border border-amber-200/80 shadow-sm mb-4">
                 {pet.photo_url ? (
-                  <img src={pet.photo_url} alt={pet.name} className="w-28 h-28 rounded-2xl object-cover border-4 border-amber-500 shadow-md" />
+                  <img src={pet.photo_url} alt={pet.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-amber-500 shadow-md" />
                 ) : (
-                  <div className="w-28 h-28 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl border-4 border-amber-300 shadow-sm">
+                  <div className="w-20 h-20 rounded-2xl bg-amber-100 flex items-center justify-center text-3xl border-4 border-amber-300 shadow-sm">
                     {pet.species === 'Kucing' ? '🐱' : '🐶'}
                   </div>
                 )}
-                <div className="space-y-1.5 text-xs flex-1">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <p><b>Nama Anabul:</b> <span className="text-sm font-black text-amber-950">{pet.name}</span></p>
+                <div className="space-y-1 text-xs flex-1">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    <p><b>Nama Anabul:</b> <span className="text-xs font-black text-amber-950">{pet.name}</span></p>
                     <p><b>Jenis Hewan:</b> <span className="font-semibold text-slate-700">{pet.species}</span></p>
                     <p><b>Ras / Breed:</b> <span className="font-semibold text-slate-700">{pet.breed || '-'}</span></p>
                     <p><b>Umur:</b> <span className="font-semibold text-slate-700">{pet.age ? `${pet.age} Bulan` : '-'}</span></p>
@@ -1194,41 +1206,41 @@ export default function Home() {
               </div>
 
               {/* TABEL LENGKAP SELURUH RIWAYAT */}
-              <div className="space-y-3 mb-6">
-                <h3 className="font-extrabold text-xs text-amber-900 border-b border-amber-300 pb-1.5 flex items-center gap-1.5">
+              <div className="space-y-2 mb-4">
+                <h3 className="font-extrabold text-[11px] text-amber-900 border-b border-amber-300 pb-1 flex items-center gap-1">
                   <span>📋</span> LEMBAR VALIDASI SELURUH RIWAYAT VAKSINASI &amp; MEDICINE RECORD
                 </h3>
 
-                <table className="w-full text-left border-collapse text-xs bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-sm">
+                <table className="w-full text-left border-collapse text-[11px] bg-white rounded-xl overflow-hidden border border-amber-200 shadow-sm">
                   <thead>
-                    <tr className="bg-amber-700 text-white text-[10px] uppercase tracking-wider">
-                      <th className="p-2.5 border-r border-amber-800">Penanganan</th>
-                      <th className="p-2.5 border-r border-amber-800">Jenis Vaksin / Obat</th>
-                      <th className="p-2.5 border-r border-amber-800">Tanggal</th>
-                      <th className="p-2.5 border-r border-amber-800">Jatuh Tempo</th>
-                      <th className="p-2.5 border-r border-amber-800">Dokter Hewan</th>
-                      <th className="p-2.5 text-center">Stiker / Cap / TTD</th>
+                    <tr className="bg-amber-700 text-white text-[9px] uppercase tracking-wider">
+                      <th className="p-2 border-r border-amber-800">Penanganan</th>
+                      <th className="p-2 border-r border-amber-800">Jenis Vaksin / Obat</th>
+                      <th className="p-2 border-r border-amber-800">Tanggal</th>
+                      <th className="p-2 border-r border-amber-800">Jatuh Tempo</th>
+                      <th className="p-2 border-r border-amber-800">Dokter Hewan</th>
+                      <th className="p-2 text-center">Stiker / Cap / TTD</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-100">
                     {records.map((rec, idx) => (
                       <tr key={idx}>
-                        <td className="p-2.5 border-r border-amber-100 font-bold text-slate-800">
+                        <td className="p-2 border-r border-amber-100 font-bold text-slate-800">
                           {rec.record_type === 'vaccine' ? '💉 Vaksinasi' : '💊 Obat Cacing'}
                         </td>
-                        <td className="p-2.5 border-r border-amber-100 text-slate-700">{rec.item_name}</td>
-                        <td className="p-2.5 border-r border-amber-100 text-slate-600">{rec.record_date}</td>
-                        <td className="p-2.5 border-r border-amber-100 font-bold text-emerald-700">
+                        <td className="p-2 border-r border-amber-100 text-slate-700">{rec.item_name}</td>
+                        <td className="p-2 border-r border-amber-100 text-slate-600">{rec.record_date}</td>
+                        <td className="p-2 border-r border-amber-100 font-bold text-emerald-700">
                           {rec.next_due_date ? formatDateLocale(new Date(rec.next_due_date)) : '-'}
                         </td>
-                        <td className="p-2.5 border-r border-amber-100 font-semibold text-slate-800">
+                        <td className="p-2 border-r border-amber-100 font-semibold text-slate-800">
                           {rec.vet_name || '-'}
                         </td>
-                        <td className="p-2.5 text-center">
+                        <td className="p-2 text-center">
                           {rec.proof_url ? (
-                            <img src={rec.proof_url} alt="Bukti" className="w-10 h-10 object-cover rounded-xl mx-auto border border-amber-300" />
+                            <img src={rec.proof_url} alt="Bukti" className="w-8 h-8 object-cover rounded-lg mx-auto border border-amber-300" />
                           ) : (
-                            <span className="text-[9px] text-slate-400 italic">[ Verified ]</span>
+                            <span className="text-[8px] text-slate-400 italic">[ Verified ]</span>
                           )}
                         </td>
                       </tr>
@@ -1237,18 +1249,18 @@ export default function Home() {
                 </table>
               </div>
 
-              <div className="flex justify-between items-end pt-4 border-t-2 border-amber-200">
-                <div className="text-[10px] text-slate-500 space-y-0.5">
+              <div className="flex justify-between items-end pt-3 border-t-2 border-amber-200">
+                <div className="text-[9px] text-slate-500 space-y-0.5">
                   <p className="font-bold text-amber-900">✔ Resmi Terverifikasi di pasporanabulku.web.id</p>
                   <p>✔ Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 </div>
-                <div className="text-center bg-white p-2.5 rounded-2xl border-2 border-amber-500 shadow-md">
+                <div className="text-center bg-white p-2 rounded-xl border-2 border-amber-500 shadow-md">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://pasporanabulku.web.id/verify/${pet.id}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=https://pasporanabulku.web.id/verify/${pet.id}`} 
                     alt="QR" 
-                    className="w-20 h-20 mx-auto"
+                    className="w-16 h-16 mx-auto"
                   />
-                  <p className="text-[8px] font-black text-amber-900 mt-1 uppercase">Scan Verifikasi</p>
+                  <p className="text-[7px] font-black text-amber-900 mt-0.5 uppercase">Scan Verifikasi</p>
                 </div>
               </div>
 
@@ -1257,7 +1269,7 @@ export default function Home() {
         })}
       </div>
 
-      {/* Modal Popup Input Riwayat Lampau (Backdate Record) */}
+      {/* Modal Popup Input Riwayat Lampau */}
       {historyModal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100">
@@ -1348,7 +1360,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal Popup Verifikasi Realtime (Dengan Input Berat Badan & Umur Terbaru) */}
+      {/* Modal Popup Verifikasi Realtime */}
       {proofModal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100">
@@ -1365,7 +1377,6 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              {/* Pilihan Jenis Vaksin atau Obat Cacing */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {proofModal.type === 'vaccine' ? 'Jenis Vaksin yang Diberikan:' : 'Nama Obat Cacing:'}
@@ -1408,7 +1419,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Input Update Berat Badan & Umur Terbaru */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1499,7 +1509,6 @@ export default function Home() {
 
             <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1 leading-relaxed">
               
-              {/* Syarat Umum */}
               <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl space-y-1.5">
                 <p className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
                   <span>⚠️</span> Syarat Penting Sebelum Vaksinasi:
@@ -1511,7 +1520,6 @@ export default function Home() {
                 </ul>
               </div>
 
-              {/* Jadwal Vaksin Kucing */}
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl space-y-2">
                 <p className="font-bold text-blue-900 text-sm flex items-center gap-1.5">
                   <span>🐱</span> Jadwal Standar Vaksinasi Kucing:
@@ -1524,7 +1532,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Jadwal Vaksin Anjing */}
               <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-2">
                 <p className="font-bold text-emerald-900 text-sm flex items-center gap-1.5">
                   <span>🐶</span> Jadwal Standar Vaksinasi Anjing:
@@ -1537,7 +1544,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Aturan Obat Cacing */}
               <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl space-y-1.5">
                 <p className="font-bold text-indigo-900 text-sm flex items-center gap-1.5">
                   <span>💊</span> Aturan Pemberian Obat Cacing Rutin:
