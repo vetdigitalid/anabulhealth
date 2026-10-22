@@ -6,30 +6,30 @@ export async function POST(req) {
     const body = await req.json()
     const { order_id, gross_amount, customer_details } = body
 
-    // Tentukan mode berdasarkan Environment Variable Vercel
-    // Jika tidak diisi, default otomatis ke false (Sandbox)
-    const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' || 
-                         process.env.MIDTRANS_IS_PRODUCTION === 'true'
-
+    // Inisialisasi Midtrans Snap - Paksa Mode Sandbox (false)
     const snap = new midtransClient.Snap({
-      isProduction: isProduction, // Akan bernilai false untuk mode Sandbox
+      isProduction: false,
       serverKey: process.env.MIDTRANS_SERVER_KEY,
       clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
     })
 
     const parameter = {
       transaction_details: {
-        order_id: order_id,
-        gross_amount: gross_amount,
+        order_id: order_id || `VIP-${Date.now()}`,
+        gross_amount: Number(gross_amount) || 29000,
       },
-      customer_details: customer_details,
+      customer_details: customer_details || {},
     }
 
-    const token = await snap.createTransactionToken(parameter)
+    const transaction = await snap.createTransaction(parameter)
 
-    return NextResponse.json({ token })
+    // Kembalikan token
+    return NextResponse.json({ token: transaction.token })
   } catch (error) {
-    console.error('Tokenizer Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Tokenizer Error Details:', error)
+    return NextResponse.json(
+      { error: error.message || 'Gagal membuat token Midtrans' },
+      { status: 500 }
+    )
   }
 }
