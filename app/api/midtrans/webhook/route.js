@@ -1,34 +1,60 @@
 import { NextResponse } from 'next/server'
-import midtransClient from 'midtrans-client'
+import { createClient } from '@supabase/supabase-js'
+
+// Inisialisasi Supabase menggunakan Service Role (atau Anon Key) untuk update data database
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 export async function POST(req) {
   try {
     const body = await req.json()
-    const { order_id, gross_amount, customer_details } = body
+    const { order_id, transaction_status } = body
 
-    // Inisialisasi Midtrans Snap - Paksa Mode Sandbox (false)
-    const snap = new midtransClient.Snap({
-      isProduction: false,
-      serverKey: process.env.MIDTRANS_SERVER_KEY,
-      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
-    })
+    console.log(`[Midtrans Webhook] Menerima notifikasi untuk Order ID: ${order_id}, Status: ${transaction_status}`)
 
-    const parameter = {
-      transaction_details: {
-        order_id: order_id || `VIP-${Date.now()}`,
-        gross_amount: Number(gross_amount) || 29000,
-      },
-      customer_details: customer_details || {},
+    // Cek apakah status pembayaran sukses (settlement atau capture)
+    const isSuccess = transaction_status === 'settlement' || transaction_status === 'capture'
+
+    if (isSuccess) {
+      // Format order_id di aplikasi kita adalah: VIP-{userId_8_karakter}-{timestamp}
+      // Contoh: VIP-a1b2c3d4-1710000000000
+      const parts = order_id.split('-')
+      
+      if (parts.length >= 2) {
+        const userPrefix = parts[1]
+
+        // Cari user di tabel profiles berdasarkan awalan ID tersebut
+        const { data: profiles, error: fetchError } = await supabase
+          .from('profiles')
+          .select('id')
+
+        if (!fetchError && profiles) {
+          const targetProfile = profiles.find(p => p.id.startsWith(userPrefix))
+
+          if (targetProfile) {
+            // Update status is_vip menjadi true di Supabase secara otomatis
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ is_vip: true })
+              .eq('id', targetProfile.id)
+
+            if (updateError) {
+              console.error('Gagal update VIP di database:', updateError.message)
+            } else {
+              console.log(`Sukses! Akun dengan ID ${targetProfile.id} resmi menjadi VIP via Webhook.`)
+            }
+          }
+        }
+      }
     }
 
-    const transaction = await snap.createTransaction(parameter)
-
-    // Kembalikan token
-    return NextResponse.json({ token: transaction.token })
+    return NextResponse.json({ status: 'OK' }, { status: 200 })
   } catch (error) {
-    console.error('Tokenizer Error Details:', error)
+    console.error('Webhook Error Details:', error)
     return NextResponse.json(
-      { error: error.message || 'Gagal membuat token Midtrans' },
+      { error: error.message || 'Gagal memproses webhook' },
       { status: 500 }
     )
   }
