@@ -17,10 +17,16 @@ export async function POST(req) {
       );
     }
 
-    // Endpoint Resmi Production Midtrans Snap API
-    const snapUrl = 'https://app.midtrans.com/snap/v1/transactions';
+    // Tentukan mode berdasarkan Environment Variable (false = Sandbox, true = Production)
+    const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' || 
+                         process.env.MIDTRANS_IS_PRODUCTION === 'true';
 
-    // Membuat Order ID Unik (Contoh: VIP-a1b2c3d4-1700000000000)
+    // URL otomatis berubah ke Sandbox jika isProduction bernilai false
+    const snapUrl = isProduction 
+      ? 'https://app.midtrans.com/snap/v1/transactions' 
+      : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+
+    // Membuat Order ID Unik
     const orderId = `VIP-${userId.substring(0, 8)}-${Date.now()}`;
     const authHeader = Buffer.from(serverKey + ':').toString('base64');
 
@@ -47,9 +53,9 @@ export async function POST(req) {
         customer_details: {
           email: email,
         },
-        enabled_payments: ['gopay', 'qris', 'shopeepay'], // Metode pembayaran utama
+        enabled_payments: ['gopay', 'qris', 'shopeepay'],
         callbacks: {
-          finish: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://anabulhealth.vercel.app'}/?status=success`
+          finish: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://pasporanabulku.web.id'}/?status=success`
         }
       })
     });
@@ -59,13 +65,13 @@ export async function POST(req) {
     if (!response.ok) {
       const errorMessage = Array.isArray(data.error_messages) 
         ? data.error_messages.join(', ') 
-        : (data.message || 'Gagal membuat transaksi Midtrans Production');
+        : (data.message || 'Gagal membuat transaksi Midtrans');
       throw new Error(errorMessage);
     }
 
     return NextResponse.json({ token: data.token, redirect_url: data.redirect_url });
   } catch (error) {
-    console.error('Error Checkout Production:', error);
+    console.error('Error Checkout:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
