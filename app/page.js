@@ -379,12 +379,22 @@ export default function Home() {
 
       if (window.snap) {
         window.snap.pay(token, {
-          onSuccess: function(result) {
-            alert("Pembayaran Berhasil! Akun Anda telah menjadi VIP.");
-            window.location.reload();
+          onSuccess: async function(result) {
+            // Update langsung status is_vip di Supabase saat sukses
+            const { error } = await supabase
+              .from('profiles')
+              .update({ is_vip: true })
+              .eq('id', user.id);
+
+            if (error) {
+              alert("Pembayaran berhasil, tetapi gagal mengaktifkan VIP: " + error.message);
+            } else {
+              alert("Pembayaran Berhasil! Akun Anda kini resmi menjadi VIP 👑");
+              window.location.reload();
+            }
           },
           onPending: function(result) {
-            alert("Menunggu pembayaran QRIS selesai...");
+            alert("Menunggu pembayaran selesai...");
           },
           onError: function(result) {
             alert("Pembayaran gagal!");
