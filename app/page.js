@@ -1377,23 +1377,71 @@ export default function Home() {
             <div className="flex justify-between items-center border-b pb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🩺</span>
-                <h3 className="font-bold text-slate-800 text-base">Panduan Program Vaksinasi Anabul</h3>
+                <h3 className="font-bold text-slate-800 text-base">Panduan &amp; Aturan Program Vaksinasi Anabul</h3>
               </div>
-              <button onClick={() => setShowGuideModal(false)} className="text-slate-400 font-bold text-lg">✕</button>
+              <button onClick={() => setShowGuideModal(false)} className="text-slate-400 font-bold text-lg hover:text-slate-600">✕</button>
             </div>
 
-            <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1">
-              <div className="p-3.5 bg-amber-50 border rounded-2xl">
-                <p className="font-bold text-amber-900 mb-1">⚠️ Syarat Penting Sebelum Vaksinasi:</p>
-                <ul className="list-disc list-inside space-y-1 text-amber-800">
-                  <li>Anabul dalam kondisi sehat.</li>
-                  <li>Sudah diberikan obat cacing minimal 1–2 minggu sebelum vaksin.</li>
+            <div className="space-y-4 text-xs text-slate-700 max-h-[65vh] overflow-y-auto pr-1 leading-relaxed">
+              
+              {/* Syarat Umum */}
+              <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl space-y-1.5">
+                <p className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                  <span>⚠️</span> Syarat Penting Sebelum Vaksinasi:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-amber-800 pl-1">
+                  <li><b>Kondisi Sehat:</b> Anabul harus benar-benar sehat, bebas dari demam, kutu berat, jamur parah, atau gejala penyakit infeksi.</li>
+                  <li><b>Bebas Parasit:</b> Wajib diberikan obat cacing minimal 1–2 minggu sebelum jadwal vaksinasi dilakukan.</li>
+                  <li><b>Usia Minimum:</b> Kitten / puppy minimal berusia 6–8 minggu untuk mendapatkan vaksin awal.</li>
                 </ul>
               </div>
+
+              {/* Jadwal Vaksin Kucing */}
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl space-y-2">
+                <p className="font-bold text-blue-900 text-sm flex items-center gap-1.5">
+                  <span>🐱</span> Jadwal Standar Vaksinasi Kucing:
+                </p>
+                <div className="space-y-1.5 text-blue-950">
+                  <p><b>• Usia 8 Minggu:</b> Vaksin Pertama (Tricat / F3 - Feline Panleukopenia, Calicivirus, Rhinotracheitis).</p>
+                  <p><b>• Usia 12 Minggu (Booster 1):</b> Pengulangan Tricat / Tetracat (F4 mencakup Chlamydia).</p>
+                  <p><b>• Usia 16 Minggu (Booster 2):</b> Pengulangan lanjutan + Vaksin Rabies.</p>
+                  <p><b>• Tahunan (Annual):</b> Booster ulangan Tricat/F4 &amp; Rabies diulang setiap 1 tahun sekali seumur hidup.</p>
+                </div>
+              </div>
+
+              {/* Jadwal Vaksin Anjing */}
+              <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-2">
+                <p className="font-bold text-emerald-900 text-sm flex items-center gap-1.5">
+                  <span>🐶</span> Jadwal Standar Vaksinasi Anjing:
+                </p>
+                <div className="space-y-1.5 text-emerald-950">
+                  <p><b>• Usia 6-8 Minggu:</b> Vaksin Puppy (Distemper, Hepatitis, Parvovirus, dll).</p>
+                  <p><b>• Usia 10-12 Minggu (Booster 1):</b> Vaksin Core DHPPI.</p>
+                  <p><b>• Usia 16 Minggu (Booster 2):</b> Vaksin DHPPI lanjutan + Vaksin Rabies.</p>
+                  <p><b>• Tahunan (Annual):</b> Booster ulangan DHPPI &amp; Rabies setiap 1 tahun sekali.</p>
+                </div>
+              </div>
+
+              {/* Aturan Obat Cacing */}
+              <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl space-y-1.5">
+                <p className="font-bold text-indigo-900 text-sm flex items-center gap-1.5">
+                  <span>💊</span> Aturan Pemberian Obat Cacing Rutin:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-indigo-950 pl-1">
+                  <li><b>Kitten / puppy (&lt; 6 bulan):</b> Diberikan rutin setiap 1 bulan sekali.</li>
+                  <li><b>Hewan dewasa (&gt; 6 bulan):</b> Diberikan rutin setiap 3 bulan sekali (1 tahun 4 kali).</li>
+                </ul>
+              </div>
+
             </div>
 
             <div className="pt-3 border-t flex justify-end">
-              <button onClick={() => setShowGuideModal(false)} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl">Paham &amp; Tutup</button>
+              <button 
+                onClick={() => setShowGuideModal(false)} 
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-blue-500/20"
+              >
+                Paham &amp; Tutup
+              </button>
             </div>
           </div>
         </div>
