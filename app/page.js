@@ -19,11 +19,13 @@ export default function Home() {
   const [isVip, setIsVip] = useState(false)
   const [uploading, setUploading] = useState(false)
   
-  // State Modal Verifikasi Realtime
+  // State Modal Verifikasi Realtime (Ditambah input update berat & umur)
   const [proofModal, setProofModal] = useState({ open: false, petId: null, type: null })
   const [vetName, setVetName] = useState('')
   const [proofFile, setProofFile] = useState(null)
-  const [selectedItemName, setSelectedItemName] = useState('') // Pilihan jenis vaksin / obat cacing saat verifikasi
+  const [selectedItemName, setSelectedItemName] = useState('') 
+  const [updateWeight, setUpdateWeight] = useState('') // 👈 State update berat badan saat verifikasi
+  const [updateAge, setUpdateAge] = useState('')       // 👈 State update umur saat verifikasi
   const [submittingProof, setSubmittingProof] = useState(false)
 
   // State Modal Input Riwayat Lampau (Manual History)
@@ -237,8 +239,9 @@ export default function Home() {
     setProofModal({ open: true, petId, type })
     setProofFile(null)
     setVetName('')
+    setUpdateWeight(targetPet?.weight ? targetPet.weight.toString() : '')
+    setUpdateAge(targetPet?.age ? targetPet.age.toString() : '')
     
-    // Set default item_name otomatis saat modal dibuka
     if (type === 'vaccine') {
       if (targetPet?.species === 'Kucing') {
         setSelectedItemName('Tetracat (F4)')
@@ -284,7 +287,10 @@ export default function Home() {
 
       const todayStr = new Date().toISOString().split('T')[0]
       const targetPet = pets.find(p => p.id === petId)
-      const isYoung = targetPet?.age && targetPet.age <= 6
+      
+      const newAge = updateAge ? parseInt(updateAge) : (targetPet?.age || null)
+      const newWeight = updateWeight ? parseFloat(updateWeight) : (targetPet?.weight || null)
+      const isYoung = newAge && newAge <= 6
       const itemName = selectedItemName || (type === 'vaccine' ? 'Vaksin Standar' : 'Deworming Routine')
       const nextDateObj = calculateNextDate(todayStr, isYoung, type)
       const nextDateStr = nextDateObj ? nextDateObj.toISOString().split('T')[0] : null
@@ -304,10 +310,23 @@ export default function Home() {
 
       if (recordErr) throw recordErr
 
-      // 2. Update status terakhir di pets
+      // 2. Update status terakhir, umur, dan berat badan terbaru di tabel pets
       const updateData = type === 'vaccine' 
-        ? { last_vaccine: todayStr, vaccine_type: itemName, vaccine_proof_url: proofUrl, vaccine_vet_name: vetName }
-        : { deworming_date: todayStr, deworming_proof_url: proofUrl, deworming_vet_name: vetName }
+        ? { 
+            last_vaccine: todayStr, 
+            vaccine_type: itemName, 
+            vaccine_proof_url: proofUrl, 
+            vaccine_vet_name: vetName,
+            age: newAge,
+            weight: newWeight
+          }
+        : { 
+            deworming_date: todayStr, 
+            deworming_proof_url: proofUrl, 
+            deworming_vet_name: vetName,
+            age: newAge,
+            weight: newWeight
+          }
 
       const { error } = await supabase
         .from('pets')
@@ -315,7 +334,7 @@ export default function Home() {
         .eq('id', petId)
 
       if (!error) {
-        alert(`Berhasil diverifikasi! Riwayat ${typeText} (${itemName}) baru telah ditambahkan.`)
+        alert(`Berhasil diverifikasi! Rekam medis ${typeText} (${itemName}), umur, & berat badan terbaru telah diperbarui.`)
         setProofModal({ open: false, petId: null, type: null })
         fetchPets(user.id)
       } else {
@@ -1329,7 +1348,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal Popup Verifikasi Realtime */}
+      {/* Modal Popup Verifikasi Realtime (Dengan Input Berat Badan & Umur Terbaru) */}
       {proofModal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100">
@@ -1387,6 +1406,35 @@ export default function Home() {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
                   />
                 )}
+              </div>
+
+              {/* Input Update Berat Badan & Umur Terbaru */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Umur Terbaru (Bln):
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Bulan"
+                    value={updateAge}
+                    onChange={(e) => setUpdateAge(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Berat Badan (Kg):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Kg"
+                    value={updateWeight}
+                    onChange={(e) => setUpdateWeight(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                  />
+                </div>
               </div>
 
               <div>
