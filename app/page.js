@@ -35,7 +35,7 @@ export default function Home() {
   const [historyModal, setHistoryModal] = useState({ open: false, petId: null })
   const [historyForm, setHistoryForm] = useState({
     record_type: 'vaccine',
-    item_name: 'Tricat (F3)',
+    item_name: 'Vaksin F3 (Panleukopenia, Calici, Rhino)',
     record_date: '',
     vet_name: '',
     proofFile: null
@@ -56,7 +56,7 @@ export default function Home() {
     phone_number: '',
     life_stage: 'Dewasa',
     last_vaccine: '',
-    vaccine_type: 'Tricat (F3)',
+    vaccine_type: 'Vaksin F3 (Panleukopenia, Calici, Rhino)',
     deworming_date: '',
     medical_history: '',
     photo_url: ''
@@ -247,14 +247,14 @@ export default function Home() {
     
     if (type === 'vaccine') {
       if (targetPet?.species === 'Kucing') {
-        setSelectedItemName('Tetracat (F4)')
+        setSelectedItemName('Vaksin F4 (+ Chlamydia)')
       } else if (targetPet?.species === 'Anjing') {
-        setSelectedItemName('Vanguard / Eurican (DHPPI)')
+        setSelectedItemName('Vaksin Core DHPPI')
       } else {
         setSelectedItemName('Vaksin Standar')
       }
     } else {
-      setSelectedItemName('Drontal / Obat Cacing Rutin')
+      setSelectedItemName('Obat Cacing Rutin')
     }
   }
 
@@ -386,7 +386,7 @@ export default function Home() {
 
       alert('Riwayat lampau berhasil ditambahkan ke paspor!')
       setHistoryModal({ open: false, petId: null })
-      setHistoryForm({ record_type: 'vaccine', item_name: 'Tricat (F3)', record_date: '', vet_name: '', proofFile: null })
+      setHistoryForm({ record_type: 'vaccine', item_name: 'Vaksin F3 (Panleukopenia, Calici, Rhino)', record_date: '', vet_name: '', proofFile: null })
       fetchPets(user.id)
     } catch (err) {
       alert('Gagal menambah riwayat: ' + err.message)
@@ -537,7 +537,7 @@ export default function Home() {
       phone_number: pet.phone_number || '',
       life_stage: pet.age && pet.age <= 6 ? 'Anak (Kitten/Puppy)' : 'Dewasa',
       last_vaccine: pet.last_vaccine || '',
-      vaccine_type: pet.vaccine_type || (pet.species === 'Anjing' ? 'Vanguard / Eurican (DHPPI)' : 'Tricat (F3)'),
+      vaccine_type: pet.vaccine_type || (pet.species === 'Anjing' ? 'Vaksin Core DHPPI' : 'Vaksin F3 (Panleukopenia, Calici, Rhino)'),
       deworming_date: pet.deworming_date || '',
       medical_history: pet.medical_history || '',
       photo_url: pet.photo_url || ''
@@ -573,7 +573,7 @@ export default function Home() {
       phone_number: '',
       life_stage: 'Dewasa',
       last_vaccine: '',
-      vaccine_type: 'Tricat (F3)',
+      vaccine_type: 'Vaksin F3 (Panleukopenia, Calici, Rhino)',
       deworming_date: '',
       medical_history: '',
       photo_url: ''
@@ -805,7 +805,7 @@ export default function Home() {
                   setForm({
                     ...form,
                     species: newSpecies,
-                    vaccine_type: newSpecies === 'Anjing' ? 'Vanguard / Eurican (DHPPI)' : 'Tricat (F3)'
+                    vaccine_type: newSpecies === 'Anjing' ? 'Vaksin Core DHPPI' : 'Vaksin F3 (Panleukopenia, Calici, Rhino)'
                   })
                 }}
                 className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 text-sm transition-all"
@@ -903,23 +903,24 @@ export default function Home() {
               >
                 {form.species === 'Kucing' ? (
                   <>
-                    <option value="Tricat (F3)">Tricat (F3)</option>
-                    <option value="Tetracat (F4)">Tetracat (F4)</option>
-                    <option value="Rabies">Rabies</option>
-                    <option value="FeLV">FeLV (Vaksin Pilihan)</option>
-                    <option value="Felocell / Lainnya">Felocell / Lainnya</option>
+                    <option value="Vaksin F3 (Panleukopenia, Calici, Rhino)">Vaksin F3 (Panleukopenia, Calici, Rhino)</option>
+                    <option value="Vaksin F4 (+ Chlamydia)">Vaksin F4 (+ Chlamydia)</option>
+                    <option value="Vaksin Rabies">Vaksin Rabies</option>
+                    <option value="Vaksin FeLV (Leukemia Kucing)">Vaksin FeLV (Leukemia Kucing)</option>
+                    <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                   </>
                 ) : form.species === 'Anjing' ? (
                   <>
-                    <option value="Vanguard / Eurican (DHPPI)">Vanguard / Eurican (DHPPI)</option>
-                    <option value="Rabies">Rabies</option>
-                    <option value="Parvo">Parvo</option>
-                    <option value="Lainnya">Lainnya</option>
+                    <option value="Vaksin Parvo (Puppy)">Vaksin Parvo (Puppy)</option>
+                    <option value="Vaksin Core DHPPI">Vaksin Core DHPPI</option>
+                    <option value="Vaksin DHPPI + Leptospira">Vaksin DHPPI + Leptospira</option>
+                    <option value="Vaksin Rabies">Vaksin Rabies</option>
+                    <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                   </>
                 ) : (
                   <>
                     <option value="Vaksin Standar">Vaksin Standar</option>
-                    <option value="Lainnya">Lainnya</option>
+                    <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                   </>
                 )}
               </select>
@@ -1304,7 +1305,7 @@ export default function Home() {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Vaksin / Obat:</label>
                 <input
                   type="text"
-                  placeholder="Contoh: Tricat (F3) / Drontal"
+                  placeholder="Contoh: Vaksin F3 / Drontal Cat"
                   value={historyForm.item_name}
                   onChange={(e) => setHistoryForm({ ...historyForm, item_name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs"
@@ -1391,23 +1392,24 @@ export default function Home() {
                   >
                     {pets.find(p => p.id === proofModal.petId)?.species === 'Kucing' ? (
                       <>
-                        <option value="Tricat (F3)">Tricat (F3)</option>
-                        <option value="Tetracat (F4)">Tetracat (F4)</option>
-                        <option value="Rabies">Rabies</option>
-                        <option value="FeLV">FeLV (Vaksin Pilihan)</option>
-                        <option value="Felocell / Lainnya">Felocell / Lainnya</option>
+                        <option value="Vaksin F3 (Panleukopenia, Calici, Rhino)">Vaksin F3 (Panleukopenia, Calici, Rhino)</option>
+                        <option value="Vaksin F4 (+ Chlamydia)">Vaksin F4 (+ Chlamydia)</option>
+                        <option value="Vaksin Rabies">Vaksin Rabies</option>
+                        <option value="Vaksin FeLV (Leukemia Kucing)">Vaksin FeLV (Leukemia Kucing)</option>
+                        <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                       </>
                     ) : pets.find(p => p.id === proofModal.petId)?.species === 'Anjing' ? (
                       <>
-                        <option value="Vanguard / Eurican (DHPPI)">Vanguard / Eurican (DHPPI)</option>
-                        <option value="Rabies">Rabies</option>
-                        <option value="Parvo">Parvo</option>
-                        <option value="Lainnya">Lainnya</option>
+                        <option value="Vaksin Parvo (Puppy)">Vaksin Parvo (Puppy)</option>
+                        <option value="Vaksin Core DHPPI">Vaksin Core DHPPI</option>
+                        <option value="Vaksin DHPPI + Leptospira">Vaksin DHPPI + Leptospira</option>
+                        <option value="Vaksin Rabies">Vaksin Rabies</option>
+                        <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                       </>
                     ) : (
                       <>
                         <option value="Vaksin Standar">Vaksin Standar</option>
-                        <option value="Lainnya">Lainnya</option>
+                        <option value="Vaksin Lainnya">Vaksin Lainnya</option>
                       </>
                     )}
                   </select>
@@ -1498,7 +1500,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal Panduan (Teks Vaksin Kucing Direvisi) */}
+      {/* Modal Panduan */}
       {showGuideModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border my-8">
@@ -1523,15 +1525,15 @@ export default function Home() {
                 </ul>
               </div>
 
-              {/* Jadwal Vaksin Kucing yang Direvisi */}
+              {/* Jadwal Vaksin Kucing */}
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl space-y-2">
                 <p className="font-bold text-blue-900 text-sm flex items-center gap-1.5">
                   <span>🐱</span> Jadwal Standar Vaksinasi Kucing:
                 </p>
                 <div className="space-y-2 text-blue-950">
-                  <p><b>1. Usia 8 Minggu:</b> Vaksin Pertama (F3 / Feline Panleukopenia, Calicivirus, Rhinotracheitis).</p>
+                  <p><b>1. Usia 8 Minggu:</b> Vaksin F3 (Feline Panleukopenia, Calici, Rhino).</p>
                   <p>
-                    <b>2. Usia 12 Minggu (Booster 1):</b> Pengulangan F3 / F4 (mencakup Chlamydia).<br/>
+                    <b>2. Usia 12 Minggu (Booster 1):</b> Pengulangan F3 / F4 (+ Chlamydia).<br/>
                     <span className="text-blue-700 font-medium block mt-0.5">• Vaksin pilihan: FeLV</span>
                   </p>
                   <p>
@@ -1542,6 +1544,9 @@ export default function Home() {
                     <b>4. Tahunan (Annual):</b> Booster ulangan F3/F4 &amp; Rabies diulang setiap 1 tahun sekali seumur hidup.<br/>
                     <span className="text-blue-700 font-medium block mt-0.5">• Vaksin pilihan: FeLV</span>
                   </p>
+                  <div className="mt-2 pt-2 border-t border-blue-200 text-[10px] text-blue-800 italic">
+                    💡 Contoh merek vaksin kucing yang umum digunakan di Indonesia: <b>Nobivac Tricat/Forcat (MSD), Felocell 3/4 (Zoetis), BioFel (Bioveta)</b>.
+                  </div>
                 </div>
               </div>
 
@@ -1551,10 +1556,13 @@ export default function Home() {
                   <span>🐶</span> Jadwal Standar Vaksinasi Anjing:
                 </p>
                 <div className="space-y-1.5 text-emerald-950">
-                  <p><b>• Usia 6-8 Minggu:</b> Vaksin Puppy (Distemper, Hepatitis, Parvovirus, dll).</p>
+                  <p><b>• Usia 6-8 Minggu:</b> Vaksin Puppy Parvo / Distemper.</p>
                   <p><b>• Usia 10-12 Minggu (Booster 1):</b> Vaksin Core DHPPI.</p>
-                  <p><b>• Usia 16 Minggu (Booster 2):</b> Vaksin DHPPI lanjutan + Vaksin Rabies.</p>
+                  <p><b>• Usia 16 Minggu (Booster 2):</b> Vaksin DHPPI + Leptospira &amp; Rabies.</p>
                   <p><b>• Tahunan (Annual):</b> Booster ulangan DHPPI &amp; Rabies setiap 1 tahun sekali.</p>
+                  <div className="mt-2 pt-2 border-t border-emerald-200 text-[10px] text-emerald-800 italic">
+                    💡 Contoh merek vaksin anjing yang umum digunakan di Indonesia: <b>Vanguard (Zoetis), Eurican (Boehringer Ingelheim), Nobivac (MSD)</b>.
+                  </div>
                 </div>
               </div>
 
